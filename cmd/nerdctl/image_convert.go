@@ -88,7 +88,6 @@ func newImageConvertCommand() *cobra.Command {
 	// #region platform flags
 	// platform is defined as StringSlice, not StringArray, to allow specifying "--platform=amd64,arm64"
 	imageConvertCommand.Flags().StringSlice("platform", []string{}, "Convert content for a specific platform")
-	imageConvertCommand.RegisterFlagCompletionFunc("platform", shellCompletePlatforms)
 	imageConvertCommand.Flags().Bool("all-platforms", false, "Convert content for all platforms")
 	// #endregion
 
@@ -268,5 +267,5 @@ func imageConvertAction(cmd *cobra.Command, args []string) error {
 
 func imageConvertShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	// show image names
-	return shellCompleteImageNames(cmd)
+	return []string{""}, 0
 }

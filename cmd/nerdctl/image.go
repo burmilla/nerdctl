@@ -30,7 +30,6 @@ func newImageCommand() *cobra.Command {
 		SilenceErrors: true,
 	}
 	cmd.AddCommand(
-		newBuildCommand(),
 		// commitCommand is in "container", not in "image"
 		imageLsCommand(),
 		newHistoryCommand(),

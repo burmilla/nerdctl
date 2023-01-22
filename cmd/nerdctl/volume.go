@@ -20,27 +20,7 @@ import (
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/cmd/volume"
 	"github.com/containerd/nerdctl/pkg/mountutil/volumestore"
-	"github.com/spf13/cobra"
 )
-
-func newVolumeCommand() *cobra.Command {
-	volumeCommand := &cobra.Command{
-		Annotations:   map[string]string{Category: Management},
-		Use:           "volume",
-		Short:         "Manage volumes",
-		RunE:          unknownSubcommandAction,
-		SilenceUsage:  true,
-		SilenceErrors: true,
-	}
-	volumeCommand.AddCommand(
-		newVolumeLsCommand(),
-		newVolumeInspectCommand(),
-		newVolumeCreateCommand(),
-		newVolumeRmCommand(),
-		newVolumePruneCommand(),
-	)
-	return volumeCommand
-}
 
 // getVolumeStore returns a volume store
 // that corresponds to a directory like `/var/lib/nerdctl/1935db59/volumes/default`

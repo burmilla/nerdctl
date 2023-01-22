@@ -17,7 +17,6 @@
 package main
 
 import (
-	"github.com/containerd/containerd"
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/cmd/container"
 	"github.com/spf13/cobra"
@@ -54,9 +53,5 @@ func killAction(cmd *cobra.Command, args []string) error {
 }
 
 func killShellComplete(cmd *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-	// show non-stopped container names
-	statusFilterFn := func(st containerd.ProcessStatus) bool {
-		return st != containerd.Stopped && st != containerd.Created && st != containerd.Unknown
-	}
-	return shellCompleteContainerNames(cmd, statusFilterFn)
+	return []string{""}, 0
 }

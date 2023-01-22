@@ -18,13 +18,10 @@ package infoutil
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/containerd/cgroups"
-	"github.com/containerd/nerdctl/pkg/apparmorutil"
 	"github.com/containerd/nerdctl/pkg/defaults"
 	"github.com/containerd/nerdctl/pkg/inspecttypes/dockercompat"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	"github.com/docker/docker/pkg/sysinfo"
 	"github.com/docker/docker/pkg/system"
 )
@@ -40,21 +37,9 @@ func CgroupsVersion() string {
 }
 
 func fulfillSecurityOptions(info *dockercompat.Info) {
-	if apparmorutil.CanApplyExistingProfile() {
-		info.SecurityOptions = append(info.SecurityOptions, "name=apparmor")
-		if rootlessutil.IsRootless() && !apparmorutil.CanApplySpecificExistingProfile(defaults.AppArmorProfileName) {
-			info.Warnings = append(info.Warnings, fmt.Sprintf(strings.TrimSpace(`
-WARNING: AppArmor profile %q is not loaded.
-         Use 'sudo nerdctl apparmor load' if you prefer to use AppArmor with rootless mode.
-         This warning is negligible if you do not intend to use AppArmor.`), defaults.AppArmorProfileName))
-		}
-	}
 	info.SecurityOptions = append(info.SecurityOptions, "name=seccomp,profile=default")
 	if defaults.CgroupnsMode() == "private" {
 		info.SecurityOptions = append(info.SecurityOptions, "name=cgroupns")
-	}
-	if rootlessutil.IsRootlessChild() {
-		info.SecurityOptions = append(info.SecurityOptions, "name=rootless")
 	}
 }
 
@@ -130,10 +115,6 @@ func fulfillPlatformInfo(info *dockercompat.Info) {
 
 func mobySysInfo(info *dockercompat.Info) *sysinfo.SysInfo {
 	var mobySysInfoOpts []sysinfo.Opt
-	if info.CgroupDriver == "systemd" && info.CgroupVersion == "2" && rootlessutil.IsRootless() {
-		g := fmt.Sprintf("/user.slice/user-%d.slice", rootlessutil.ParentEUID())
-		mobySysInfoOpts = append(mobySysInfoOpts, sysinfo.WithCgroup2GroupPath(g))
-	}
 	mobySysInfo := sysinfo.New(mobySysInfoOpts...)
 	return mobySysInfo
 }

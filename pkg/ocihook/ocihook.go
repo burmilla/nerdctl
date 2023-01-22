@@ -22,19 +22,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/containerd/containerd/cmd/ctr/commands"
 	gocni "github.com/containerd/go-cni"
-	"github.com/containerd/nerdctl/pkg/bypass4netnsutil"
 	"github.com/containerd/nerdctl/pkg/dnsutil/hostsstore"
 	"github.com/containerd/nerdctl/pkg/labels"
 	"github.com/containerd/nerdctl/pkg/netutil"
 	"github.com/containerd/nerdctl/pkg/netutil/nettype"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	types100 "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/opencontainers/runtime-spec/specs-go"
 
@@ -185,26 +182,6 @@ func newHandlerOpts(state *specs.State, dataStore, cniPath, cniNetconfPath strin
 		o.contianerMAC = macAddress
 	}
 
-	if rootlessutil.IsRootlessChild() {
-		o.rootlessKitClient, err = rootlessutil.NewRootlessKitClient()
-		if err != nil {
-			return nil, err
-		}
-		b4nnEnabled, err := bypass4netnsutil.IsBypass4netnsEnabled(o.state.Annotations)
-		if err != nil {
-			return nil, err
-		}
-		if b4nnEnabled {
-			socketPath, err := bypass4netnsutil.GetBypass4NetnsdDefaultSocketPath()
-			if err != nil {
-				return nil, err
-			}
-			o.bypassClient, err = b4nndclient.New(socketPath)
-			if err != nil {
-				return nil, fmt.Errorf("bypass4netnsd not running? (Hint: run `containerd-rootless-setuptool.sh install-bypass4netnsd`): %w", err)
-			}
-		}
-	}
 	return o, nil
 }
 
@@ -283,71 +260,6 @@ func getNetNSPath(state *specs.State) (string, error) {
 	return s, nil
 }
 
-func getPortMapOpts(opts *handlerOpts) ([]gocni.NamespaceOpts, error) {
-	if len(opts.ports) > 0 {
-		if !rootlessutil.IsRootlessChild() {
-			return []gocni.NamespaceOpts{gocni.WithCapabilityPortMap(opts.ports)}, nil
-		}
-		var (
-			childIP                            net.IP
-			portDriverDisallowsLoopbackChildIP bool
-		)
-		info, err := opts.rootlessKitClient.Info(context.TODO())
-		if err != nil {
-			logrus.WithError(err).Warn("cannot call RootlessKit Info API, make sure you have RootlessKit v0.14.1 or later")
-		} else {
-			childIP = info.NetworkDriver.ChildIP
-			portDriverDisallowsLoopbackChildIP = info.PortDriver.DisallowLoopbackChildIP // true for slirp4netns port driver
-		}
-		// For rootless, we need to modify the hostIP that is not bindable in the child namespace.
-		// https: //github.com/containerd/nerdctl/issues/88
-		//
-		// We must NOT modify opts.ports here, because we use the unmodified opts.ports for
-		// interaction with RootlessKit API.
-		ports := make([]gocni.PortMapping, len(opts.ports))
-		for i, p := range opts.ports {
-			if hostIP := net.ParseIP(p.HostIP); hostIP != nil && !hostIP.IsUnspecified() {
-				// loopback address is always bindable in the child namespace, but other addresses are unlikely.
-				if !hostIP.IsLoopback() {
-					if childIP != nil && childIP.Equal(hostIP) {
-						// this is fine
-					} else {
-						if portDriverDisallowsLoopbackChildIP {
-							p.HostIP = childIP.String()
-						} else {
-							p.HostIP = "127.0.0.1"
-						}
-					}
-				} else if portDriverDisallowsLoopbackChildIP {
-					p.HostIP = childIP.String()
-				}
-			}
-			ports[i] = p
-		}
-		return []gocni.NamespaceOpts{gocni.WithCapabilityPortMap(ports)}, nil
-	}
-	return nil, nil
-}
-
-func getIPAddressOpts(opts *handlerOpts) ([]gocni.NamespaceOpts, error) {
-	if opts.containerIP != "" {
-		if rootlessutil.IsRootlessChild() {
-			logrus.Debug("container IP assignment is not fully supported in rootless mode. The IP is not accessible from the host (but still accessible from other containers).")
-		}
-
-		return []gocni.NamespaceOpts{
-			gocni.WithLabels(map[string]string{
-				// Special tick for go-cni. Because go-cni marks all labels and args as same
-				// So, we need add a special label to pass the containerIP to the host-local plugin.
-				// FYI: https://github.com/containerd/go-cni/blob/v1.1.3/README.md?plain=1#L57-L64
-				"IgnoreUnknown": "1",
-			}),
-			gocni.WithArgs("IP", opts.containerIP),
-		}, nil
-	}
-	return nil, nil
-}
-
 func getMACAddressOpts(opts *handlerOpts) ([]gocni.NamespaceOpts, error) {
 	if opts.contianerMAC != "" {
 		return []gocni.NamespaceOpts{
@@ -363,13 +275,8 @@ func getMACAddressOpts(opts *handlerOpts) ([]gocni.NamespaceOpts, error) {
 }
 
 func onCreateRuntime(opts *handlerOpts) error {
-	loadAppArmor()
 
 	if opts.cni != nil {
-		portMapOpts, err := getPortMapOpts(opts)
-		if err != nil {
-			return err
-		}
 		nsPath, err := getNetNSPath(opts.state)
 		if err != nil {
 			return err
@@ -379,17 +286,11 @@ func onCreateRuntime(opts *handlerOpts) error {
 		if err != nil {
 			return err
 		}
-		ipAddressOpts, err := getIPAddressOpts(opts)
-		if err != nil {
-			return err
-		}
 		macAddressOpts, err := getMACAddressOpts(opts)
 		if err != nil {
 			return err
 		}
 		var namespaceOpts []gocni.NamespaceOpts
-		namespaceOpts = append(namespaceOpts, portMapOpts...)
-		namespaceOpts = append(namespaceOpts, ipAddressOpts...)
 		namespaceOpts = append(namespaceOpts, macAddressOpts...)
 		hsMeta := hostsstore.Meta{
 			Namespace:  opts.state.Annotations[labels.Namespace],
@@ -408,37 +309,10 @@ func onCreateRuntime(opts *handlerOpts) error {
 			hsMeta.Networks[cniName] = cniResRaw[i]
 		}
 
-		b4nnEnabled, err := bypass4netnsutil.IsBypass4netnsEnabled(opts.state.Annotations)
-		if err != nil {
-			return err
-		}
-
 		if err := hs.Acquire(hsMeta); err != nil {
 			return err
 		}
 
-		if rootlessutil.IsRootlessChild() {
-			if b4nnEnabled {
-				bm, err := bypass4netnsutil.NewBypass4netnsCNIBypassManager(opts.bypassClient, opts.rootlessKitClient)
-				if err != nil {
-					return err
-				}
-				err = bm.StartBypass(ctx, opts.ports, opts.state.ID, opts.state.Annotations[labels.StateDir])
-				if err != nil {
-					return fmt.Errorf("bypass4netnsd not running? (Hint: run `containerd-rootless-setuptool.sh install-bypass4netnsd`): %w", err)
-				}
-			} else if len(opts.ports) > 0 {
-				pm, err := rootlessutil.NewRootlessCNIPortManager(opts.rootlessKitClient)
-				if err != nil {
-					return err
-				}
-				for _, p := range opts.ports {
-					if err := pm.ExposePort(ctx, p); err != nil {
-						return err
-					}
-				}
-			}
-		}
 	}
 	return nil
 }
@@ -447,47 +321,11 @@ func onPostStop(opts *handlerOpts) error {
 	ctx := context.Background()
 	if opts.cni != nil {
 		var err error
-		b4nnEnabled, err := bypass4netnsutil.IsBypass4netnsEnabled(opts.state.Annotations)
-		if err != nil {
-			return err
-		}
-		if rootlessutil.IsRootlessChild() {
-			if b4nnEnabled {
-				bm, err := bypass4netnsutil.NewBypass4netnsCNIBypassManager(opts.bypassClient, opts.rootlessKitClient)
-				if err != nil {
-					return err
-				}
-				err = bm.StopBypass(ctx, opts.state.ID)
-				if err != nil {
-					return err
-				}
-			} else if len(opts.ports) > 0 {
-				pm, err := rootlessutil.NewRootlessCNIPortManager(opts.rootlessKitClient)
-				if err != nil {
-					return err
-				}
-				for _, p := range opts.ports {
-					if err := pm.UnexposePort(ctx, p); err != nil {
-						return err
-					}
-				}
-			}
-		}
-		portMapOpts, err := getPortMapOpts(opts)
-		if err != nil {
-			return err
-		}
-		ipAddressOpts, err := getIPAddressOpts(opts)
-		if err != nil {
-			return err
-		}
 		macAddressOpts, err := getMACAddressOpts(opts)
 		if err != nil {
 			return err
 		}
 		var namespaceOpts []gocni.NamespaceOpts
-		namespaceOpts = append(namespaceOpts, portMapOpts...)
-		namespaceOpts = append(namespaceOpts, ipAddressOpts...)
 		namespaceOpts = append(namespaceOpts, macAddressOpts...)
 		if err := opts.cni.Remove(ctx, opts.fullID, "", namespaceOpts...); err != nil {
 			logrus.WithError(err).Errorf("failed to call cni.Remove")

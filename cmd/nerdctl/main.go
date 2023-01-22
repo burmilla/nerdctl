@@ -25,14 +25,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containerd/nerdctl/pkg/config"
 	ncdefaults "github.com/containerd/nerdctl/pkg/defaults"
 	"github.com/containerd/nerdctl/pkg/errutil"
 	"github.com/containerd/nerdctl/pkg/logging"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
-	"github.com/containerd/nerdctl/pkg/version"
 	"github.com/fatih/color"
-	"github.com/pelletier/go-toml"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -105,8 +101,6 @@ func usage(c *cobra.Command) error {
 
 	if c == c.Root() {
 		s += "Run '" + c.CommandPath() + " COMMAND --help' for more information on a command.\n"
-	} else {
-		s += "See also '" + c.Root().CommandPath() + " --help' for the global flags such as '--namespace', '--snapshotter', and '--cgroup-manager'."
 	}
 	fmt.Fprintln(c.OutOrStdout(), s)
 	return nil
@@ -134,43 +128,7 @@ func xmain() error {
 }
 
 func initRootCmdFlags(rootCmd *cobra.Command, tomlPath string) (*pflag.FlagSet, error) {
-	cfg := config.New()
-	if r, err := os.Open(tomlPath); err == nil {
-		logrus.Debugf("Loading config from %q", tomlPath)
-		defer r.Close()
-		dec := toml.NewDecoder(r).Strict(true) // set Strict to detect typo
-		if err := dec.Decode(cfg); err != nil {
-			return nil, fmt.Errorf("failed to load nerdctl config (not daemon config) from %q (Hint: don't mix up daemon's `config.toml` with `nerdctl.toml`): %w", tomlPath, err)
-		}
-		logrus.Debugf("Loaded config %+v", cfg)
-	} else {
-		logrus.WithError(err).Debugf("Not loading config from %q", tomlPath)
-		if !errors.Is(err, os.ErrNotExist) {
-			return nil, err
-		}
-	}
 	aliasToBeInherited := pflag.NewFlagSet(rootCmd.Name(), pflag.ExitOnError)
-
-	rootCmd.PersistentFlags().Bool("debug", cfg.Debug, "debug mode")
-	rootCmd.PersistentFlags().Bool("debug-full", cfg.DebugFull, "debug mode (with full output)")
-	// -a is aliases (conflicts with nerdctl images -a)
-	AddPersistentStringFlag(rootCmd, "address", []string{"a", "H"}, nil, []string{"host"}, aliasToBeInherited, cfg.Address, "CONTAINERD_ADDRESS", `containerd address, optionally with "unix://" prefix`)
-	// -n is aliases (conflicts with nerdctl logs -n)
-	AddPersistentStringFlag(rootCmd, "namespace", []string{"n"}, nil, nil, aliasToBeInherited, cfg.Namespace, "CONTAINERD_NAMESPACE", `containerd namespace, such as "moby" for Docker, "k8s.io" for Kubernetes`)
-	rootCmd.RegisterFlagCompletionFunc("namespace", shellCompleteNamespaceNames)
-	AddPersistentStringFlag(rootCmd, "snapshotter", nil, nil, []string{"storage-driver"}, aliasToBeInherited, cfg.Snapshotter, "CONTAINERD_SNAPSHOTTER", "containerd snapshotter")
-	rootCmd.RegisterFlagCompletionFunc("snapshotter", shellCompleteSnapshotterNames)
-	rootCmd.RegisterFlagCompletionFunc("storage-driver", shellCompleteSnapshotterNames)
-	AddPersistentStringFlag(rootCmd, "cni-path", nil, nil, nil, aliasToBeInherited, cfg.CNIPath, "CNI_PATH", "cni plugins binary directory")
-	AddPersistentStringFlag(rootCmd, "cni-netconfpath", nil, nil, nil, aliasToBeInherited, cfg.CNINetConfPath, "NETCONFPATH", "cni config directory")
-	rootCmd.PersistentFlags().String("data-root", cfg.DataRoot, "Root directory of persistent nerdctl state (managed by nerdctl, not by containerd)")
-	rootCmd.PersistentFlags().String("cgroup-manager", cfg.CgroupManager, `Cgroup manager to use ("cgroupfs"|"systemd")`)
-	rootCmd.RegisterFlagCompletionFunc("cgroup-manager", shellCompleteCgroupManagerNames)
-	rootCmd.PersistentFlags().Bool("insecure-registry", cfg.InsecureRegistry, "skips verifying HTTPS certs, and allows falling back to plain HTTP")
-	// hosts-dir is defined as StringSlice, not StringArray, to allow specifying "--hosts-dir=/etc/containerd/certs.d,/etc/docker/certs.d"
-	rootCmd.PersistentFlags().StringSlice("hosts-dir", cfg.HostsDir, "A directory that contains <HOST:PORT>/hosts.toml (containerd style) or <HOST:PORT>/{ca.cert, cert.pem, key.pem} (docker style)")
-	// Experimental enable experimental feature, see in https://github.com/containerd/nerdctl/blob/main/docs/experimental.md
-	AddPersistentBoolFlag(rootCmd, "experimental", nil, nil, cfg.Experimental, "NERDCTL_EXPERIMENTAL", "Control experimental: https://github.com/containerd/nerdctl/blob/main/docs/experimental.md")
 	return aliasToBeInherited, nil
 }
 
@@ -190,7 +148,7 @@ Config file ($NERDCTL_TOML): %s
 		Use:              "nerdctl",
 		Short:            short,
 		Long:             long,
-		Version:          strings.TrimPrefix(version.Version, "v"),
+		Version:          "BurmillaOS custom",
 		SilenceUsage:     true,
 		SilenceErrors:    true,
 		TraverseChildren: true, // required for global short hands like -a, -H, -n
@@ -218,7 +176,7 @@ Config file ($NERDCTL_TOML): %s
 		if strings.Contains(address, "://") && !strings.HasPrefix(address, "unix://") {
 			return fmt.Errorf("invalid address %q", address)
 		}
-		cgroupManager := globalOptions.CgroupManager
+		cgroupManager := "none"
 		if runtime.GOOS == "linux" {
 			switch cgroupManager {
 			case "systemd", "cgroupfs", "none":
@@ -226,15 +184,10 @@ Config file ($NERDCTL_TOML): %s
 				return fmt.Errorf("invalid cgroup-manager %q (supported values: \"systemd\", \"cgroupfs\", \"none\")", cgroupManager)
 			}
 		}
-		if appNeedsRootlessParentMain(cmd, args) {
-			// reexec /proc/self/exe with `nsenter` into RootlessKit namespaces
-			return rootlessutil.ParentMain()
-		}
 		return nil
 	}
 	rootCmd.RunE = unknownSubcommandAction
 	rootCmd.AddCommand(
-		newCreateCommand(),
 		// #region Run & Exec
 		newRunCommand(),
 		newUpdateCommand(),
@@ -244,21 +197,13 @@ Config file ($NERDCTL_TOML): %s
 		// #region Container management
 		newPsCommand(),
 		newLogsCommand(),
-		newPortCommand(),
 		newStopCommand(),
 		newStartCommand(),
 		newRestartCommand(),
 		newKillCommand(),
 		newRmCommand(),
-		newPauseCommand(),
-		newUnpauseCommand(),
-		newCommitCommand(),
 		newWaitCommand(),
-		newRenameCommand(),
 		// #endregion
-
-		// Build
-		newBuildCommand(),
 
 		// #region Image management
 		newImagesCommand(),
@@ -272,9 +217,7 @@ Config file ($NERDCTL_TOML): %s
 		// #endregion
 
 		// #region System
-		newEventsCommand(),
 		newInfoCommand(),
-		newVersionCommand(),
 		// #endregion
 
 		// Inspect
@@ -287,11 +230,7 @@ Config file ($NERDCTL_TOML): %s
 		// #region Management
 		newContainerCommand(),
 		newImageCommand(),
-		newNetworkCommand(),
-		newVolumeCommand(),
 		newSystemCommand(),
-		newNamespaceCommand(),
-		newBuilderCommand(),
 		// #endregion
 
 		// Internal
@@ -302,15 +241,7 @@ Config file ($NERDCTL_TOML): %s
 
 		// Logout
 		newLogoutCommand(),
-
-		// Compose
-		newComposeCommand(),
-
-		// IPFS
-		newIPFSCommand(),
 	)
-	addApparmorCommand(rootCmd)
-	addCpCommand(rootCmd)
 
 	// add aliasToBeInherited to subCommand(s) InheritedFlags
 	for _, subCmd := range rootCmd.Commands() {

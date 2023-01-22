@@ -17,28 +17,17 @@
 package defaults
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/containerd/containerd/plugin"
 	gocni "github.com/containerd/go-cni"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
-	"github.com/sirupsen/logrus"
 )
 
 const AppArmorProfileName = "nerdctl-default"
 const Runtime = plugin.RuntimeRuncV2
 
 func DataRoot() string {
-	if !rootlessutil.IsRootless() {
-		return "/var/lib/nerdctl"
-	}
-	xdh, err := rootlessutil.XDGDataHome()
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Join(xdh, "nerdctl")
+	return "/var/lib/nerdctl"
 }
 
 func CNIPath() string {
@@ -47,18 +36,6 @@ func CNIPath() string {
 		"/usr/local/lib/cni",
 		"/usr/libexec/cni", // Fedora
 		"/usr/lib/cni",     // debian (containernetworking-plugins)
-	}
-	if rootlessutil.IsRootless() {
-		home := os.Getenv("HOME")
-		if home == "" {
-			panic("environment variable HOME is not set")
-		}
-		candidates = append([]string{
-			// NOTE: These user paths are not defined in XDG
-			filepath.Join(home, ".local/libexec/cni"),
-			filepath.Join(home, ".local/lib/cni"),
-			filepath.Join(home, "opt/cni/bin"),
-		}, candidates...)
 	}
 
 	for _, f := range candidates {
@@ -72,61 +49,21 @@ func CNIPath() string {
 }
 
 func CNINetConfPath() string {
-	if !rootlessutil.IsRootless() {
-		return gocni.DefaultNetDir
-	}
-	xch, err := rootlessutil.XDGConfigHome()
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Join(xch, "cni/net.d")
+	return gocni.DefaultNetDir
 }
 
 func CNIRuntimeDir() string {
-	if !rootlessutil.IsRootless() {
-		return "/run/cni"
-	}
-	xdr, err := rootlessutil.XDGRuntimeDir()
-	if err != nil {
-		logrus.Warn(err)
-		xdr = fmt.Sprintf("/run/user/%d", rootlessutil.ParentEUID())
-	}
-	return fmt.Sprintf("%s/cni", xdr)
+	return "/run/cni"
 }
 
 func BuildKitHost() string {
-	if !rootlessutil.IsRootless() {
-		return "unix:///run/buildkit/buildkitd.sock"
-	}
-	xdr, err := rootlessutil.XDGRuntimeDir()
-	if err != nil {
-		logrus.Warn(err)
-		xdr = fmt.Sprintf("/run/user/%d", rootlessutil.ParentEUID())
-	}
-	return fmt.Sprintf("unix://%s/buildkit/buildkitd.sock", xdr)
+	return "unix:///run/buildkit/buildkitd.sock"
 }
 
 func NerdctlTOML() string {
-	if !rootlessutil.IsRootless() {
-		return "/etc/nerdctl/nerdctl.toml"
-	}
-	xch, err := rootlessutil.XDGConfigHome()
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Join(xch, "nerdctl/nerdctl.toml")
+	return "/etc/nerdctl/nerdctl.toml"
 }
 
 func HostsDirs() []string {
-	if !rootlessutil.IsRootless() {
-		return []string{"/etc/containerd/certs.d", "/etc/docker/certs.d"}
-	}
-	xch, err := rootlessutil.XDGConfigHome()
-	if err != nil {
-		panic(err)
-	}
-	return []string{
-		filepath.Join(xch, "containerd/certs.d"),
-		filepath.Join(xch, "docker/certs.d"),
-	}
+	return []string{"/etc/containerd/certs.d", "/etc/docker/certs.d"}
 }

@@ -273,11 +273,7 @@ func generateExecProcessSpec(ctx context.Context, cmd *cobra.Command, args []str
 
 func execShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) == 0 {
-		// show running container names
-		statusFilterFn := func(st containerd.ProcessStatus) bool {
-			return st == containerd.Running
-		}
-		return shellCompleteContainerNames(cmd, statusFilterFn)
+		return []string{""}, 0
 	}
 	return nil, cobra.ShellCompDirectiveNoFileComp
 }

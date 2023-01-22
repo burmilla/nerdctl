@@ -42,10 +42,6 @@ func newNamespaceCommand() *cobra.Command {
 		SilenceErrors: true,
 	}
 	namespaceCommand.AddCommand(newNamespaceLsCommand())
-	namespaceCommand.AddCommand(newNamespaceRmCommand())
-	namespaceCommand.AddCommand(newNamespaceCreateCommand())
-	namespaceCommand.AddCommand(newNamespacelabelUpdateCommand())
-	namespaceCommand.AddCommand(newNamespaceInspectCommand())
 	return namespaceCommand
 }
 

@@ -43,7 +43,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/clientutil"
 	"github.com/containerd/nerdctl/pkg/cmd/container"
 	"github.com/containerd/nerdctl/pkg/cmd/image"
-	"github.com/containerd/nerdctl/pkg/containerutil"
 	"github.com/containerd/nerdctl/pkg/defaults"
 	"github.com/containerd/nerdctl/pkg/errutil"
 	"github.com/containerd/nerdctl/pkg/idgen"
@@ -53,10 +52,8 @@ import (
 	"github.com/containerd/nerdctl/pkg/logging"
 	"github.com/containerd/nerdctl/pkg/mountutil"
 	"github.com/containerd/nerdctl/pkg/namestore"
-	"github.com/containerd/nerdctl/pkg/netutil"
 	"github.com/containerd/nerdctl/pkg/platformutil"
 	"github.com/containerd/nerdctl/pkg/referenceutil"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	"github.com/containerd/nerdctl/pkg/strutil"
 	"github.com/containerd/nerdctl/pkg/taskutil"
 	dopts "github.com/docker/cli/opts"
@@ -70,7 +67,7 @@ const (
 )
 
 func newRunCommand() *cobra.Command {
-	shortHelp := "Run a command in a new container. Optionally specify \"ipfs://\" or \"ipns://\" scheme to pull image from IPFS."
+	shortHelp := "Run a command in a new container."
 	longHelp := shortHelp
 	switch runtime.GOOS {
 	case "windows":
@@ -107,14 +104,8 @@ func setCreateFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("tty", "t", false, "Allocate a pseudo-TTY")
 	cmd.Flags().BoolP("interactive", "i", false, "Keep STDIN open even if not attached")
 	cmd.Flags().String("restart", "no", `Restart policy to apply when a container exits (implemented values: "no"|"always|on-failure:n|unless-stopped")`)
-	cmd.RegisterFlagCompletionFunc("restart", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"no", "always", "on-failure", "unless-stopped"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	cmd.Flags().Bool("rm", false, "Automatically remove the container when it exits")
 	cmd.Flags().String("pull", "missing", `Pull image before running ("always"|"missing"|"never")`)
-	cmd.RegisterFlagCompletionFunc("pull", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"always", "missing", "never"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	cmd.Flags().String("stop-signal", "SIGTERM", "Signal to stop a container")
 	cmd.Flags().Int("stop-timeout", 0, "Timeout (in seconds) to stop a container")
 
@@ -125,37 +116,9 @@ func setCreateFlags(cmd *cobra.Command) {
 
 	// #region platform flags
 	cmd.Flags().String("platform", "", "Set platform (e.g. \"amd64\", \"arm64\")") // not a slice, and there is no --all-platforms
-	cmd.RegisterFlagCompletionFunc("platform", shellCompletePlatforms)
-	// #endregion
-
-	// #region network flags
-	// network (net) is defined as StringSlice, not StringArray, to allow specifying "--network=cni1,cni2"
-	cmd.Flags().StringSlice("network", []string{netutil.DefaultNetworkName}, `Connect a container to a network ("bridge"|"host"|"none"|"container:<container>"|<CNI>)`)
-	cmd.RegisterFlagCompletionFunc("network", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return shellCompleteNetworkNames(cmd, []string{})
-	})
-	cmd.Flags().StringSlice("net", []string{netutil.DefaultNetworkName}, `Connect a container to a network ("bridge"|"host"|"none"|<CNI>)`)
-	cmd.RegisterFlagCompletionFunc("net", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return shellCompleteNetworkNames(cmd, []string{})
-	})
-	// dns is defined as StringSlice, not StringArray, to allow specifying "--dns=1.1.1.1,8.8.8.8" (compatible with Podman)
-	cmd.Flags().StringSlice("dns", nil, "Set custom DNS servers")
-	cmd.Flags().StringSlice("dns-search", nil, "Set custom DNS search domains")
-	// We allow for both "--dns-opt" and "--dns-option", although the latter is the recommended way.
-	cmd.Flags().StringSlice("dns-opt", nil, "Set DNS options")
-	cmd.Flags().StringSlice("dns-option", nil, "Set DNS options")
-	// publish is defined as StringSlice, not StringArray, to allow specifying "--publish=80:80,443:443" (compatible with Podman)
-	cmd.Flags().StringSliceP("publish", "p", nil, "Publish a container's port(s) to the host")
-	// FIXME: not support IPV6 yet
-	cmd.Flags().String("ip", "", "IPv4 address to assign to the container")
-	cmd.Flags().StringP("hostname", "h", "", "Container host name")
-	cmd.Flags().String("mac-address", "", "MAC address to assign to the container")
 	// #endregion
 
 	cmd.Flags().String("ipc", "", `IPC namespace to use ("host"|"private")`)
-	cmd.RegisterFlagCompletionFunc("ipc", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"host", "private"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	// #region cgroups, namespaces, and ulimits flags
 	cmd.Flags().Float64("cpus", 0.0, "Number of CPUs")
 	cmd.Flags().StringP("memory", "m", "", "Memory limit")
@@ -167,17 +130,11 @@ func setCreateFlags(cmd *cobra.Command) {
 	cmd.Flags().Int("oom-score-adj", 0, "Tune container’s OOM preferences (-1000 to 1000, rootless: 100 to 1000)")
 	cmd.Flags().String("pid", "", "PID namespace to use")
 	cmd.Flags().String("uts", "", "UTS namespace to use")
-	cmd.RegisterFlagCompletionFunc("pid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"host"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	cmd.Flags().Int64("pids-limit", -1, "Tune container pids limit (set -1 for unlimited)")
 	cmd.Flags().StringSlice("cgroup-conf", nil, "Configure cgroup v2 (key=value)")
 	cmd.Flags().Uint16("blkio-weight", 0, "Block IO (relative weight), between 10 and 1000, or 0 to disable (default 0)")
 	cmd.Flags().String("cgroupns", defaults.CgroupnsMode(), `Cgroup namespace to use, the default depends on the cgroup version ("host"|"private")`)
 	cmd.Flags().String("cgroup-parent", "", "Optional parent cgroup for the container")
-	cmd.RegisterFlagCompletionFunc("cgroupns", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"host", "private"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	cmd.Flags().String("cpuset-cpus", "", "CPUs in which to allow execution (0-3, 0,1)")
 	cmd.Flags().String("cpuset-mems", "", "MEMs in which to allow execution (0-3, 0,1)")
 	cmd.Flags().Uint64("cpu-shares", 0, "CPU shares (relative weight)")
@@ -197,14 +154,9 @@ func setCreateFlags(cmd *cobra.Command) {
 
 	// #region security flags
 	cmd.Flags().StringArray("security-opt", []string{}, "Security options")
-	cmd.RegisterFlagCompletionFunc("security-opt", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"seccomp=", "seccomp=unconfined", "apparmor=", "apparmor=" + defaults.AppArmorProfileName, "apparmor=unconfined", "no-new-privileges", "privileged-without-host-devices"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	// cap-add and cap-drop are defined as StringSlice, not StringArray, to allow specifying "--cap-add=CAP_SYS_ADMIN,CAP_NET_ADMIN" (compatible with Podman)
 	cmd.Flags().StringSlice("cap-add", []string{}, "Add Linux capabilities")
-	cmd.RegisterFlagCompletionFunc("cap-add", capShellComplete)
 	cmd.Flags().StringSlice("cap-drop", []string{}, "Drop Linux capabilities")
-	cmd.RegisterFlagCompletionFunc("cap-drop", capShellComplete)
 	cmd.Flags().Bool("privileged", false, "Give extended privileges to this container")
 	// #endregion
 
@@ -212,11 +164,6 @@ func setCreateFlags(cmd *cobra.Command) {
 	cmd.Flags().String("runtime", defaults.Runtime, "Runtime to use for this container, e.g. \"crun\", or \"io.containerd.runsc.v1\"")
 	// sysctl needs to be StringArray, not StringSlice, to prevent "foo=foo1,foo2" from being split to {"foo=foo1", "foo2"}
 	cmd.Flags().StringArray("sysctl", nil, "Sysctl options")
-	// gpus needs to be StringArray, not StringSlice, to prevent "capabilities=utility,device=DEV" from being split to {"capabilities=utility", "device=DEV"}
-	cmd.Flags().StringArray("gpus", nil, "GPU devices to add to the container ('all' to pass all GPUs)")
-	cmd.RegisterFlagCompletionFunc("gpus", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"all"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	// #endregion
 
 	// #region mount flags
@@ -249,9 +196,6 @@ func setCreateFlags(cmd *cobra.Command) {
 	cmd.Flags().String("name", "", "Assign a name to the container")
 	// label needs to be StringArray, not StringSlice, to prevent "foo=foo1,foo2" from being split to {"foo=foo1", "foo2"}
 	cmd.Flags().StringArrayP("label", "l", nil, "Set metadata on container")
-	cmd.RegisterFlagCompletionFunc("label", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return labels.ShellCompletions, cobra.ShellCompDirectiveNoFileComp
-	})
 
 	// label-file is defined as StringSlice, not StringArray, to allow specifying "--env-file=FILE1,FILE2" (compatible with Podman)
 	cmd.Flags().StringSlice("label-file", nil, "Set metadata on container from file")
@@ -261,9 +205,6 @@ func setCreateFlags(cmd *cobra.Command) {
 	// #region logging flags
 	// log-opt needs to be StringArray, not StringSlice, to prevent "env=os,customer" from being split to {"env=os", "customer"}
 	cmd.Flags().String("log-driver", "json-file", "Logging driver for the container. Default is json-file. It also supports logURI (eg: --log-driver binary://<path>)")
-	cmd.RegisterFlagCompletionFunc("log-driver", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return logging.Drivers(), cobra.ShellCompDirectiveNoFileComp
-	})
 	cmd.Flags().StringArray("log-opt", nil, "Log driver options")
 	// #endregion
 
@@ -273,21 +214,8 @@ func setCreateFlags(cmd *cobra.Command) {
 
 	// #region verify flags
 	cmd.Flags().String("verify", "none", "Verify the image (none|cosign)")
-	cmd.RegisterFlagCompletionFunc("verify", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"none", "cosign"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	cmd.Flags().String("cosign-key", "", "Path to the public key file, KMS, URI or Kubernetes Secret for --verify=cosign")
 	// #endregion
-
-	cmd.Flags().String("ipfs-address", "", "multiaddr of IPFS API (default uses $IPFS_PATH env variable if defined or local directory ~/.ipfs)")
-
-	cmd.Flags().String("isolation", "default", "Specify isolation technology for container. On Linux the only valid value is default. Windows options are host, process and hyperv with process isolation as the default")
-	cmd.RegisterFlagCompletionFunc("isolation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if runtime.GOOS == "windows" {
-			return []string{"default", "host", "process", "hyperv"}, cobra.ShellCompDirectiveNoFileComp
-		}
-		return []string{"default"}, cobra.ShellCompDirectiveNoFileComp
-	})
 
 }
 
@@ -750,14 +678,10 @@ func processPullCommandFlagsInRun(cmd *cobra.Command) (types.PullCommandOptions,
 	if err != nil {
 		return types.PullCommandOptions{}, err
 	}
-	ipfsAddressStr, err := cmd.Flags().GetString("ipfs-address")
-	if err != nil {
-		return types.PullCommandOptions{}, err
-	}
 	return types.PullCommandOptions{
 		Verify:      verifier,
 		CosignKey:   cosignKey,
-		IPFSAddress: ipfsAddressStr,
+		IPFSAddress: "",
 	}, nil
 }
 
@@ -1257,9 +1181,6 @@ func generateSharingPIDOpts(ctx context.Context, targetCon containerd.Container)
 	}
 	if isHost {
 		opts = append(opts, oci.WithHostNamespace(specs.PIDNamespace))
-		if rootlessutil.IsRootless() {
-			opts = append(opts, containerutil.WithBindMountHostProcfs)
-		}
 	} else {
 		ns := specs.LinuxNamespace{
 			Type: specs.PIDNamespace,

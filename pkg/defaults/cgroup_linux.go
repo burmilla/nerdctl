@@ -20,7 +20,6 @@ import (
 	"os"
 
 	"github.com/containerd/cgroups"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 )
 
 func IsSystemdAvailable() bool {
@@ -36,12 +35,6 @@ func IsSystemdAvailable() bool {
 // - "cgroupfs" on v1 rootful
 // - "none"     on v1 rootless
 func CgroupManager() string {
-	if cgroups.Mode() == cgroups.Unified && IsSystemdAvailable() {
-		return "systemd"
-	}
-	if rootlessutil.IsRootless() {
-		return "none"
-	}
 	return "cgroupfs"
 }
 

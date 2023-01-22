@@ -35,16 +35,11 @@ import (
 
 func NewClient(ctx context.Context, namespace, address string, opts ...containerd.ClientOpt) (*containerd.Client, context.Context, context.CancelFunc, error) {
 
-	ctx = namespaces.WithNamespace(ctx, namespace)
+	ctx = namespaces.WithNamespace(ctx, "burmillaos")
 
-	address = strings.TrimPrefix(address, "unix://")
-	const dockerContainerdaddress = "/var/run/docker/containerd/containerd.sock"
+	address = "/var/run/containerd/containerd.sock"
 	if err := systemutil.IsSocketAccessible(address); err != nil {
-		if systemutil.IsSocketAccessible(dockerContainerdaddress) == nil {
-			err = fmt.Errorf("cannot access containerd socket %q (hint: try running with `--address %s` to connect to Docker-managed containerd): %w", address, dockerContainerdaddress, err)
-		} else {
-			err = fmt.Errorf("cannot access containerd socket %q: %w", address, err)
-		}
+		err = fmt.Errorf("cannot access containerd socket %q: %w", address, err)
 		return nil, nil, nil, err
 	}
 	client, err := containerd.New(address, opts...)

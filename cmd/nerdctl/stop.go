@@ -217,9 +217,5 @@ func waitContainerStop(ctx context.Context, exitCh <-chan containerd.ExitStatus,
 }
 
 func stopShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// show non-stopped container names
-	statusFilterFn := func(st containerd.ProcessStatus) bool {
-		return st != containerd.Stopped && st != containerd.Created && st != containerd.Unknown
-	}
-	return shellCompleteContainerNames(cmd, statusFilterFn)
+	return []string{""}, 0
 }

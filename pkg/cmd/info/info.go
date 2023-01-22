@@ -34,7 +34,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/infoutil"
 	"github.com/containerd/nerdctl/pkg/inspecttypes/dockercompat"
 	"github.com/containerd/nerdctl/pkg/inspecttypes/native"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	"github.com/containerd/nerdctl/pkg/strutil"
 	"github.com/docker/go-units"
 	"github.com/sirupsen/logrus"
@@ -109,7 +108,6 @@ func fulfillNativeInfo(di *native.DaemonInfo, globalOptions types.GlobalCommandO
 	info.Namespace = globalOptions.Namespace
 	info.Snapshotter = globalOptions.Snapshotter
 	info.CgroupManager = globalOptions.CgroupManager
-	info.Rootless = rootlessutil.IsRootless()
 	return info, nil
 }
 

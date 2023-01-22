@@ -28,9 +28,7 @@ import (
 	"github.com/containerd/containerd/pkg/userns"
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/bypass4netnsutil"
-	"github.com/containerd/nerdctl/pkg/containerutil"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	"github.com/containerd/nerdctl/pkg/strutil"
 	"github.com/docker/go-units"
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -54,7 +52,7 @@ func capShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]s
 
 func runShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) == 0 {
-		return shellCompleteImageNames(cmd)
+		return []string{""}, 0
 	}
 	return nil, cobra.ShellCompDirectiveNoFileComp
 }
@@ -143,16 +141,6 @@ func setPlatformOptions(ctx context.Context, cmd *cobra.Command, client *contain
 		return nil, err
 	}
 	opts = append(opts, WithSysctls(strutil.ConvertKVStringsToMap(sysctl)))
-
-	gpus, err := cmd.Flags().GetStringArray("gpus")
-	if err != nil {
-		return nil, err
-	}
-	gpuOpt, err := parseGPUOpts(gpus)
-	if err != nil {
-		return nil, err
-	}
-	opts = append(opts, gpuOpt...)
 
 	if rdtClass, err := cmd.Flags().GetString("rdt-class"); err != nil {
 		return nil, err
@@ -280,9 +268,6 @@ func generatePIDOpts(ctx context.Context, client *containerd.Client, pid string)
 		// do nothing
 	case "host":
 		opts = append(opts, oci.WithHostNamespace(specs.PIDNamespace))
-		if rootlessutil.IsRootless() {
-			opts = append(opts, containerutil.WithBindMountHostProcfs)
-		}
 	default: // container:<id|name>
 		parsed := strings.Split(pid, ":")
 		if len(parsed) < 2 || parsed[0] != "container" {

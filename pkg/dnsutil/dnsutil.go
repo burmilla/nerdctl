@@ -15,27 +15,3 @@
 */
 
 package dnsutil
-
-import (
-	"context"
-
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
-)
-
-func GetSlirp4netnsDNS() ([]string, error) {
-	var dns []string
-	rkClient, err := rootlessutil.NewRootlessKitClient()
-	if err != nil {
-		return dns, err
-	}
-	info, err := rkClient.Info(context.TODO())
-	if err != nil {
-		return dns, err
-	}
-	if info != nil && info.NetworkDriver != nil {
-		for _, dnsIP := range info.NetworkDriver.DNS {
-			dns = append(dns, dnsIP.String())
-		}
-	}
-	return dns, nil
-}

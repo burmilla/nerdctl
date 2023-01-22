@@ -32,15 +32,12 @@ import (
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/clientutil"
 	"github.com/containerd/nerdctl/pkg/containerutil"
-	"github.com/containerd/nerdctl/pkg/dnsutil"
 	"github.com/containerd/nerdctl/pkg/dnsutil/hostsstore"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/mountutil"
 	"github.com/containerd/nerdctl/pkg/netutil"
 	"github.com/containerd/nerdctl/pkg/netutil/nettype"
-	"github.com/containerd/nerdctl/pkg/portutil"
 	"github.com/containerd/nerdctl/pkg/resolvconf"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	"github.com/containerd/nerdctl/pkg/strutil"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
@@ -115,10 +112,6 @@ func withCustomHosts(src string) func(context.Context, oci.Client, *containers.C
 
 func generateNetOpts(cmd *cobra.Command, globalOptions types.GlobalCommandOptions, dataStore, stateDir, ns, id string) ([]oci.SpecOpts, []string, string, []gocni.PortMapping, string, error) {
 	opts := []oci.SpecOpts{}
-	portSlice, err := cmd.Flags().GetStringSlice("publish")
-	if err != nil {
-		return nil, nil, "", nil, "", err
-	}
 	ipAddress, err := cmd.Flags().GetString("ip")
 	if err != nil {
 		return nil, nil, "", nil, "", err
@@ -172,13 +165,6 @@ func generateNetOpts(cmd *cobra.Command, globalOptions types.GlobalCommandOption
 				return nil, nil, "", nil, "", err
 			}
 			opts = append(opts, withCustomResolvConf(resolvConfPath), withCustomHosts(etcHostsPath))
-			for _, p := range portSlice {
-				pm, err := portutil.ParseFlagP(p)
-				if err != nil {
-					return nil, nil, "", pm, "", err
-				}
-				ports = append(ports, pm...)
-			}
 		}
 	case nettype.Container:
 		if macAddress != "" {
@@ -320,12 +306,6 @@ func buildResolvConf(cmd *cobra.Command, resolvConfPath string) error {
 	}
 
 	slirp4Dns := []string{}
-	if rootlessutil.IsRootlessChild() {
-		slirp4Dns, err = dnsutil.GetSlirp4netnsDNS()
-		if err != nil {
-			return err
-		}
-	}
 
 	var (
 		nameServers   = strutil.DedupeStrSlice(dnsValue)

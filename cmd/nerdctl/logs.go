@@ -29,7 +29,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/clientutil"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/labels"
-	"github.com/containerd/nerdctl/pkg/labels/k8slabels"
 	"github.com/containerd/nerdctl/pkg/logging"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -177,25 +176,13 @@ func logsAction(cmd *cobra.Command, args []string) error {
 }
 
 func getLogPath(ctx context.Context, container containerd.Container) (string, error) {
-	extensions, err := container.Extensions(ctx)
-	if err != nil {
-		return "", fmt.Errorf("get extensions for container %s,failed: %#v", container.ID(), err)
-	}
-	metaData := extensions[k8slabels.ContainerMetadataExtension]
 	var meta cri.ContainerMetadata
-	if metaData != nil {
-		err = meta.UnmarshalJSON(metaData.GetValue())
-		if err != nil {
-			return "", fmt.Errorf("unmarshal extensions for container %s,failed: %#v", container.ID(), err)
-		}
-	}
 
 	return meta.LogPath, nil
 }
 
 func logsShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// show container names (TODO: only show containers with logs)
-	return shellCompleteContainerNames(cmd, nil)
+	return []string{""}, 0
 }
 
 // Attempts to parse the argument given to `-n/--tail` as a uint.

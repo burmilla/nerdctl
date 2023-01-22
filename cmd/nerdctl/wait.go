@@ -104,9 +104,5 @@ func waitContainer(ctx context.Context, w io.Writer, container containerd.Contai
 }
 
 func waitShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// show running container names
-	statusFilterFn := func(st containerd.ProcessStatus) bool {
-		return st == containerd.Running
-	}
-	return shellCompleteContainerNames(cmd, statusFilterFn)
+	return []string{""}, 0
 }

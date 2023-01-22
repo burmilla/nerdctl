@@ -271,9 +271,5 @@ func reconfigPIDContainer(ctx context.Context, c containerd.Container, client *c
 }
 
 func startShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// show non-running container names
-	statusFilterFn := func(st containerd.ProcessStatus) bool {
-		return st != containerd.Running && st != containerd.Unknown
-	}
-	return shellCompleteContainerNames(cmd, statusFilterFn)
+	return []string{""}, 0
 }

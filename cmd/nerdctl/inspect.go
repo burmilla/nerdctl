@@ -51,17 +51,8 @@ var validInspectType = map[string]bool{
 
 func addInspectFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("format", "f", "", "Format the output using the given Go template, e.g, '{{json .}}'")
-	cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"json"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	cmd.Flags().String("type", "", "Return JSON for specified type")
-	cmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"image", "container", ""}, cobra.ShellCompDirectiveNoFileComp
-	})
 	cmd.Flags().String("mode", "dockercompat", `Inspect mode, "dockercompat" for Docker-compatible output, "native" for containerd-native output`)
-	cmd.RegisterFlagCompletionFunc("mode", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"dockercompat", "native"}, cobra.ShellCompDirectiveNoFileComp
-	})
 }
 
 func inspectAction(cmd *cobra.Command, args []string) error {
@@ -148,9 +139,5 @@ func inspectAction(cmd *cobra.Command, args []string) error {
 }
 
 func inspectShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// show container names
-	containers, _ := shellCompleteContainerNames(cmd, nil)
-	// show image names
-	images, _ := shellCompleteImageNames(cmd)
-	return append(containers, images...), cobra.ShellCompDirectiveNoFileComp
+	return []string{""}, 0
 }

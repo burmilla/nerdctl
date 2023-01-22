@@ -25,35 +25,26 @@ import (
 func newPullCommand() *cobra.Command {
 	var pullCommand = &cobra.Command{
 		Use:           "pull [flags] NAME[:TAG]",
-		Short:         "Pull an image from a registry. Optionally specify \"ipfs://\" or \"ipns://\" scheme to pull image from IPFS.",
+		Short:         "Pull an image from a registry.",
 		Args:          IsExactArgs(1),
 		RunE:          pullAction,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
 	pullCommand.Flags().String("unpack", "auto", "Unpack the image for the current single platform (auto/true/false)")
-	pullCommand.RegisterFlagCompletionFunc("unpack", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"auto", "true", "false"}, cobra.ShellCompDirectiveNoFileComp
-	})
 
 	// #region platform flags
 	// platform is defined as StringSlice, not StringArray, to allow specifying "--platform=amd64,arm64"
 	pullCommand.Flags().StringSlice("platform", nil, "Pull content for a specific platform")
-	pullCommand.RegisterFlagCompletionFunc("platform", shellCompletePlatforms)
 	pullCommand.Flags().Bool("all-platforms", false, "Pull content for all platforms")
 	// #endregion
 
 	// #region verify flags
 	pullCommand.Flags().String("verify", "none", "Verify the image (none|cosign)")
-	pullCommand.RegisterFlagCompletionFunc("verify", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"none", "cosign"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	pullCommand.Flags().String("cosign-key", "", "Path to the public key file, KMS, URI or Kubernetes Secret for --verify=cosign")
 	// #endregion
 
 	pullCommand.Flags().BoolP("quiet", "q", false, "Suppress verbose output")
-
-	pullCommand.Flags().String("ipfs-address", "", "multiaddr of IPFS API (default uses $IPFS_PATH env variable if defined or local directory ~/.ipfs)")
 
 	return pullCommand
 }
@@ -88,10 +79,6 @@ func processPullCommandFlags(cmd *cobra.Command) (types.PullCommandOptions, erro
 	if err != nil {
 		return types.PullCommandOptions{}, err
 	}
-	ipfsAddressStr, err := cmd.Flags().GetString("ipfs-address")
-	if err != nil {
-		return types.PullCommandOptions{}, err
-	}
 	return types.PullCommandOptions{
 		GOptions:     globalOptions,
 		AllPlatforms: allPlatforms,
@@ -100,7 +87,7 @@ func processPullCommandFlags(cmd *cobra.Command) (types.PullCommandOptions, erro
 		Quiet:        quiet,
 		Verify:       verifier,
 		CosignKey:    cosignKey,
-		IPFSAddress:  ipfsAddressStr,
+		IPFSAddress:  "",
 	}, nil
 }
 

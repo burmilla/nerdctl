@@ -23,7 +23,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/containerd/nerdctl/pkg/labels/k8slabels"
 	"github.com/sirupsen/logrus"
 )
 
@@ -117,17 +116,13 @@ type ContainerLogViewer struct {
 // given container and returns a ContainerLogViewer.
 func InitContainerLogViewer(containerLabels map[string]string, lvopts LogViewOptions, stopChannel chan os.Signal) (contlv *ContainerLogViewer, err error) {
 	var lcfg LogConfig
-	if _, ok := containerLabels[k8slabels.ContainerType]; ok {
-		lcfg.Driver = "cri"
-	} else {
-		if err := lvopts.Validate(); err != nil {
-			return nil, fmt.Errorf("invalid LogViewOptions provided (%#v): %s", lvopts, err)
-		}
+	if err := lvopts.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid LogViewOptions provided (%#v): %s", lvopts, err)
+	}
 
-		lcfg, err = LoadLogConfig(lvopts.DatastoreRootPath, lvopts.Namespace, lvopts.ContainerID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load logging config: %s", err)
-		}
+	lcfg, err = LoadLogConfig(lvopts.DatastoreRootPath, lvopts.Namespace, lvopts.ContainerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load logging config: %s", err)
 	}
 
 	lv := &ContainerLogViewer{

@@ -30,27 +30,20 @@ func newContainerCommand() *cobra.Command {
 		SilenceErrors: true,
 	}
 	containerCommand.AddCommand(
-		newCreateCommand(),
 		newRunCommand(),
 		newUpdateCommand(),
 		newExecCommand(),
 		containerLsCommand(),
 		newContainerInspectCommand(),
 		newLogsCommand(),
-		newPortCommand(),
 		newRmCommand(),
 		newStopCommand(),
 		newStartCommand(),
 		newRestartCommand(),
 		newKillCommand(),
-		newPauseCommand(),
 		newWaitCommand(),
-		newUnpauseCommand(),
-		newCommitCommand(),
-		newRenameCommand(),
 		newContainerPruneCommand(),
 	)
-	addCpCommand(containerCommand)
 	return containerCommand
 }
 

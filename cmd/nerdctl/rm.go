@@ -58,6 +58,5 @@ func rmAction(cmd *cobra.Command, args []string) error {
 }
 
 func rmShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// show container names
-	return shellCompleteContainerNames(cmd, nil)
+	return []string{""}, 0
 }

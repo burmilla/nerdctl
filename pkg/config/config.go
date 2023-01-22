@@ -16,13 +16,6 @@
 
 package config
 
-import (
-	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/defaults"
-	"github.com/containerd/containerd/namespaces"
-	ncdefaults "github.com/containerd/nerdctl/pkg/defaults"
-)
-
 // Config corresponds to nerdctl.toml .
 // See docs/config.md .
 type Config struct {
@@ -38,23 +31,4 @@ type Config struct {
 	InsecureRegistry bool     `toml:"insecure_registry"`
 	HostsDir         []string `toml:"hosts_dir"`
 	Experimental     bool     `toml:"experimental"`
-}
-
-// New creates a default Config object statically,
-// without interpolating CLI flags, env vars, and toml.
-func New() *Config {
-	return &Config{
-		Debug:            false,
-		DebugFull:        false,
-		Address:          defaults.DefaultAddress,
-		Namespace:        namespaces.Default,
-		Snapshotter:      containerd.DefaultSnapshotter,
-		CNIPath:          ncdefaults.CNIPath(),
-		CNINetConfPath:   ncdefaults.CNINetConfPath(),
-		DataRoot:         ncdefaults.DataRoot(),
-		CgroupManager:    ncdefaults.CgroupManager(),
-		InsecureRegistry: false,
-		HostsDir:         ncdefaults.HostsDirs(),
-		Experimental:     true,
-	}
 }

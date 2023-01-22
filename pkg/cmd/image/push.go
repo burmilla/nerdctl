@@ -20,8 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/images"
@@ -30,13 +28,10 @@ import (
 	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/clientutil"
-	"github.com/containerd/nerdctl/pkg/cosignutil"
 	"github.com/containerd/nerdctl/pkg/errutil"
 	"github.com/containerd/nerdctl/pkg/imgutil/dockerconfigresolver"
 	"github.com/containerd/nerdctl/pkg/imgutil/push"
-	"github.com/containerd/nerdctl/pkg/ipfs"
 	"github.com/containerd/nerdctl/pkg/platformutil"
-	"github.com/containerd/nerdctl/pkg/referenceutil"
 	"github.com/containerd/stargz-snapshotter/estargz"
 	"github.com/containerd/stargz-snapshotter/estargz/zstdchunked"
 	estargzconvert "github.com/containerd/stargz-snapshotter/nativeconverter/estargz"
@@ -51,38 +46,6 @@ func Push(ctx context.Context, rawRef string, options types.ImagePushCommandOpti
 		return err
 	}
 	defer cancel()
-
-	if scheme, ref, err := referenceutil.ParseIPFSRefWithScheme(rawRef); err == nil {
-		if scheme != "ipfs" {
-			return fmt.Errorf("ipfs scheme is only supported but got %q", scheme)
-		}
-		logrus.Infof("pushing image %q to IPFS", ref)
-
-		var ipfsPath *string
-		if options.IpfsAddress != "" {
-			dir, err := os.MkdirTemp("", "apidirtmp")
-			if err != nil {
-				return err
-			}
-			defer os.RemoveAll(dir)
-			if err := os.WriteFile(filepath.Join(dir, "api"), []byte(options.IpfsAddress), 0600); err != nil {
-				return err
-			}
-			ipfsPath = &dir
-		}
-
-		var layerConvert converter.ConvertFunc
-		if options.Estargz {
-			layerConvert = eStargzConvertFunc()
-		}
-		c, err := ipfs.Push(ctx, client, ref, layerConvert, options.AllPlatforms, options.Platforms, options.IpfsEnsureImage, ipfsPath)
-		if err != nil {
-			logrus.WithError(err).Warnf("ipfs push failed")
-			return err
-		}
-		fmt.Fprintln(stdout, c)
-		return nil
-	}
 
 	named, err := refdocker.ParseDockerRef(rawRef)
 	if err != nil {
@@ -155,16 +118,6 @@ func Push(ctx context.Context, rawRef string, options types.ImagePushCommandOpti
 	}
 
 	switch options.Sign {
-	case "cosign":
-
-		if !options.GOptions.Experimental {
-			return fmt.Errorf("cosign only work with enable experimental feature")
-		}
-
-		err = cosignutil.SignCosign(rawRef, options.CosignKey)
-		if err != nil {
-			return err
-		}
 	case "none":
 		logrus.Debugf("signing process skipped")
 	default:

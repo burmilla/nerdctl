@@ -81,9 +81,6 @@ func setUpdateFlags(cmd *cobra.Command) {
 	cmd.Flags().Int64("pids-limit", -1, "Tune container pids limit (set -1 for unlimited)")
 	cmd.Flags().Uint16("blkio-weight", 0, "Block IO (relative weight), between 10 and 1000, or 0 to disable (default 0)")
 	cmd.Flags().String("restart", "no", `Restart policy to apply when a container exits (implemented values: "no"|"always|on-failure:n|unless-stopped")`)
-	cmd.RegisterFlagCompletionFunc("restart", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"no", "always", "on-failure", "unless-stopped"}, cobra.ShellCompDirectiveNoFileComp
-	})
 }
 
 func updateAction(cmd *cobra.Command, args []string) error {
@@ -397,5 +394,5 @@ func copySpec(spec *runtimespec.Spec) (*runtimespec.Spec, error) {
 }
 
 func updateShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return shellCompleteContainerNames(cmd, nil)
+	return []string{""}, 0
 }

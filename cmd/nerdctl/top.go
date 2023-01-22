@@ -39,8 +39,6 @@ import (
 	"github.com/containerd/containerd"
 	"github.com/containerd/nerdctl/pkg/clientutil"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
-	"github.com/containerd/nerdctl/pkg/infoutil"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 
 	"github.com/spf13/cobra"
 )
@@ -81,9 +79,6 @@ func topAction(cmd *cobra.Command, args []string) error {
 	globalOptions, err := processRootCmdFlags(cmd)
 	if err != nil {
 		return err
-	}
-	if rootlessutil.IsRootless() && infoutil.CgroupsVersion() == "1" {
-		return fmt.Errorf("top requires cgroup v2 for rootless containers, see https://rootlesscontaine.rs/getting-started/common/cgroup2/")
 	}
 
 	if globalOptions.CgroupManager == "none" {
@@ -320,9 +315,5 @@ func containerTop(ctx context.Context, cmd *cobra.Command, client *containerd.Cl
 }
 
 func topShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// show running container names
-	statusFilterFn := func(st containerd.ProcessStatus) bool {
-		return st == containerd.Running
-	}
-	return shellCompleteContainerNames(cmd, statusFilterFn)
+	return []string{""}, 0
 }

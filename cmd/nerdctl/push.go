@@ -29,7 +29,7 @@ const (
 func newPushCommand() *cobra.Command {
 	var pushCommand = &cobra.Command{
 		Use:               "push [flags] NAME[:TAG]",
-		Short:             "Push an image or a repository to a registry. Optionally specify \"ipfs://\" or \"ipns://\" scheme to push image to IPFS.",
+		Short:             "Push an image or a repository to a registry.",
 		Args:              IsExactArgs(1),
 		RunE:              pushAction,
 		ValidArgsFunction: pushShellComplete,
@@ -39,19 +39,13 @@ func newPushCommand() *cobra.Command {
 	// #region platform flags
 	// platform is defined as StringSlice, not StringArray, to allow specifying "--platform=amd64,arm64"
 	pushCommand.Flags().StringSlice("platform", []string{}, "Push content for a specific platform")
-	pushCommand.RegisterFlagCompletionFunc("platform", shellCompletePlatforms)
 	pushCommand.Flags().Bool("all-platforms", false, "Push content for all platforms")
 	// #endregion
 
 	pushCommand.Flags().Bool("estargz", false, "Convert the image into eStargz")
-	pushCommand.Flags().Bool("ipfs-ensure-image", true, "Ensure the entire contents of the image is locally available before push")
-	pushCommand.Flags().String("ipfs-address", "", "multiaddr of IPFS API (default uses $IPFS_PATH env variable if defined or local directory ~/.ipfs)")
 
 	// #region sign flags
 	pushCommand.Flags().String("sign", "none", "Sign the image (none|cosign")
-	pushCommand.RegisterFlagCompletionFunc("sign", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"none", "cosign"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	pushCommand.Flags().String("cosign-key", "", "Path to the private key file, KMS URI or Kubernetes Secret for --sign=cosign")
 	// #endregion
 
@@ -77,14 +71,6 @@ func processImagePushCommandOptions(cmd *cobra.Command) (types.ImagePushCommandO
 	if err != nil {
 		return types.ImagePushCommandOptions{}, err
 	}
-	ipfsEnsureImage, err := cmd.Flags().GetBool("ipfs-ensure-image")
-	if err != nil {
-		return types.ImagePushCommandOptions{}, err
-	}
-	ipfsAddress, err := cmd.Flags().GetString("ipfs-address")
-	if err != nil {
-		return types.ImagePushCommandOptions{}, err
-	}
 	sign, err := cmd.Flags().GetString("sign")
 	if err != nil {
 		return types.ImagePushCommandOptions{}, err
@@ -102,8 +88,8 @@ func processImagePushCommandOptions(cmd *cobra.Command) (types.ImagePushCommandO
 		Platforms:                      platform,
 		AllPlatforms:                   allPlatforms,
 		Estargz:                        estargz,
-		IpfsEnsureImage:                ipfsEnsureImage,
-		IpfsAddress:                    ipfsAddress,
+		IpfsEnsureImage:                false,
+		IpfsAddress:                    "",
 		Sign:                           sign,
 		CosignKey:                      cosignKey,
 		AllowNondistributableArtifacts: allowNonDist,
@@ -121,5 +107,5 @@ func pushAction(cmd *cobra.Command, args []string) error {
 
 func pushShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	// show image names
-	return shellCompleteImageNames(cmd)
+	return []string{""}, 0
 }

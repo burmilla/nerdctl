@@ -56,9 +56,6 @@ Properties:
 	// Alias "-f" is reserved for "--filter"
 	imagesCommand.Flags().String("format", "", "Format the output using the given Go template, e.g, '{{json .}}', 'wide'")
 	imagesCommand.Flags().StringSliceP("filter", "f", []string{}, "Filter output based on conditions provided")
-	imagesCommand.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"json", "table", "wide"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	imagesCommand.Flags().Bool("digests", false, "Show digests (compatible with Docker, unlike ID)")
 	imagesCommand.Flags().Bool("names", false, "Show image names")
 	imagesCommand.Flags().BoolP("all", "a", true, "(unimplemented yet, always true)")
@@ -136,7 +133,7 @@ func imagesAction(cmd *cobra.Command, args []string) error {
 func imagesShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) == 0 {
 		// show image names
-		return shellCompleteImageNames(cmd)
+		return []string{""}, 0
 	}
 	return nil, cobra.ShellCompDirectiveNoFileComp
 }

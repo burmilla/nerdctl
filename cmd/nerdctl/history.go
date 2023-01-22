@@ -54,9 +54,6 @@ func newHistoryCommand() *cobra.Command {
 
 func addHistoryFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("format", "f", "", "Format the output using the given Go template, e.g, '{{json .}}'")
-	cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"json"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	cmd.Flags().BoolP("quiet", "q", false, "Only show numeric IDs")
 	cmd.Flags().Bool("no-trunc", false, "Don't truncate output")
 }
@@ -253,6 +250,5 @@ func (x *historyPrinter) printHistory(p historyPrintable) error {
 }
 
 func historyShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// show image names
-	return shellCompleteImageNames(cmd)
+	return []string{""}, 0
 }

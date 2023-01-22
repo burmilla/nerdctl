@@ -38,7 +38,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/clientutil"
 	"github.com/containerd/nerdctl/pkg/formatter"
 	"github.com/containerd/nerdctl/pkg/labels"
-	"github.com/containerd/nerdctl/pkg/labels/k8slabels"
 	"github.com/opencontainers/image-spec/identity"
 	"github.com/sirupsen/logrus"
 
@@ -63,9 +62,6 @@ func newPsCommand() *cobra.Command {
 
 	// Alias "-f" is reserved for "--filter"
 	psCommand.Flags().String("format", "", "Format the output using the given Go template, e.g, '{{json .}}', 'wide'")
-	psCommand.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"json", "table", "wide"}, cobra.ShellCompDirectiveNoFileComp
-	})
 	psCommand.Flags().StringSliceP("filter", "f", nil, "Filter matches containers based on given conditions")
 	return psCommand
 }
@@ -232,7 +228,6 @@ func printContainers(ctx context.Context, client *containerd.Client, cmd *cobra.
 			Image:     imageName,
 			Platform:  info.Labels[labels.Platform],
 			Names:     getPrintableContainerName(info.Labels),
-			Ports:     formatter.FormatPorts(info.Labels),
 			Status:    cStatus,
 			Runtime:   info.Runtime.Name,
 			Labels:    formatter.FormatLabels(info.Labels),
@@ -295,16 +290,6 @@ func getPrintableContainerName(containerLabels map[string]string) string {
 		return name
 	}
 
-	if ns, ok := containerLabels[k8slabels.PodNamespace]; ok {
-		if podName, ok := containerLabels[k8slabels.PodName]; ok {
-			if containerName, ok := containerLabels[k8slabels.ContainerName]; ok {
-				// Container
-				return fmt.Sprintf("k8s://%s/%s/%s", ns, podName, containerName)
-			}
-			// Pod sandbox
-			return fmt.Sprintf("k8s://%s/%s", ns, podName)
-		}
-	}
 	return ""
 }
 

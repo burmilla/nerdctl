@@ -51,7 +51,7 @@ func tagAction(cmd *cobra.Command, args []string) error {
 func tagShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) < 2 {
 		// show image names
-		return shellCompleteImageNames(cmd)
+		return []string{""}, 0
 	}
 	return nil, cobra.ShellCompDirectiveNoFileComp
 }

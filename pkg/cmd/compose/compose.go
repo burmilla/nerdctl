@@ -21,8 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/errdefs"
@@ -33,7 +31,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/composer/serviceparser"
 	"github.com/containerd/nerdctl/pkg/cosignutil"
 	"github.com/containerd/nerdctl/pkg/imgutil"
-	"github.com/containerd/nerdctl/pkg/ipfs"
 	"github.com/containerd/nerdctl/pkg/netutil"
 	"github.com/containerd/nerdctl/pkg/referenceutil"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -95,25 +92,6 @@ func New(client *containerd.Client, globalOptions types.GlobalCommandOptions, op
 				return err
 			}
 			ocispecPlatforms = []ocispec.Platform{parsed} // no append
-		}
-
-		// IPFS reference
-		if scheme, ref, err := referenceutil.ParseIPFSRefWithScheme(imageName); err == nil {
-			var ipfsPath *string
-			if ipfsAddress := options.IPFSAddress; ipfsAddress != "" {
-				dir, err := os.MkdirTemp("", "apidirtmp")
-				if err != nil {
-					return err
-				}
-				defer os.RemoveAll(dir)
-				if err := os.WriteFile(filepath.Join(dir, "api"), []byte(ipfsAddress), 0600); err != nil {
-					return err
-				}
-				ipfsPath = &dir
-			}
-			_, err = ipfs.EnsureImage(ctx, client, stdout, stderr, globalOptions.Snapshotter, scheme, ref,
-				pullMode, ocispecPlatforms, nil, quiet, ipfsPath)
-			return err
 		}
 
 		ref := imageName

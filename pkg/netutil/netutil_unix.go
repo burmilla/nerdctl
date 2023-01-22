@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	DefaultNetworkName = "bridge"
+	DefaultNetworkName = "host"
 	DefaultCIDR        = "10.4.0.0/24"
 	DefaultIPAMDriver  = "host-local"
 )

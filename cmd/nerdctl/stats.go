@@ -27,7 +27,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/containerd/containerd"
 	eventstypes "github.com/containerd/containerd/api/events"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/events"
@@ -37,9 +36,7 @@ import (
 	"github.com/containerd/nerdctl/pkg/eventutil"
 	"github.com/containerd/nerdctl/pkg/formatter"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
-	"github.com/containerd/nerdctl/pkg/infoutil"
 	"github.com/containerd/nerdctl/pkg/labels"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	"github.com/containerd/nerdctl/pkg/statsutil"
 	"github.com/containerd/typeurl"
 	"github.com/sirupsen/logrus"
@@ -110,9 +107,6 @@ func statsAction(cmd *cobra.Command, args []string) error {
 	globalOptions, err := processRootCmdFlags(cmd)
 	if err != nil {
 		return err
-	}
-	if rootlessutil.IsRootless() && infoutil.CgroupsVersion() == "1" {
-		return errors.New("stats requires cgroup v2 for rootless containers, see https://rootlesscontaine.rs/getting-started/common/cgroup2/")
 	}
 
 	showAll := len(args) == 0
@@ -487,9 +481,5 @@ func collect(cmd *cobra.Command, globalOptions types.GlobalCommandOptions, s *st
 }
 
 func statsShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// show running container names
-	statusFilterFn := func(st containerd.ProcessStatus) bool {
-		return st == containerd.Running
-	}
-	return shellCompleteContainerNames(cmd, statusFilterFn)
+	return []string{""}, 0
 }

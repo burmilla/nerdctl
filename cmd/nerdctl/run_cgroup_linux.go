@@ -27,7 +27,6 @@ import (
 	"github.com/containerd/containerd/oci"
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/infoutil"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	"github.com/docker/go-units"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
@@ -90,19 +89,7 @@ func generateCgroupOpts(cmd *cobra.Command, globalOptions types.GlobalCommandOpt
 	}
 
 	if globalOptions.CgroupManager == "none" {
-		if !rootlessutil.IsRootless() {
-			return nil, errors.New(`cgroup-manager "none" is only supported for rootless`)
-		}
-
-		if cpus > 0.0 || memStr != "" || memSwap != "" || pidsLimit > 0 {
-			logrus.Warn(`cgroup manager is set to "none", discarding resource limit requests. ` +
-				"(Hint: enable cgroup v2 with systemd: https://rootlesscontaine.rs/getting-started/common/cgroup2/)")
-		}
-		if parent != "" {
-			logrus.Warnf(`cgroup manager is set to "none", ignoring cgroup parent %q`+
-				"(Hint: enable cgroup v2 with systemd: https://rootlesscontaine.rs/getting-started/common/cgroup2/)", parent)
-		}
-		return []oci.SpecOpts{oci.WithCgroup("")}, nil
+		return nil, errors.New(`cgroup-manager "none" is only supported for rootless`)
 	}
 
 	var opts []oci.SpecOpts // nolint: prealloc
@@ -292,9 +279,6 @@ func generateCgroupPath(cmd *cobra.Command, cgroupManager, parent, id string) (s
 		slice        = "system.slice"
 		scopePrefix  = ":nerdctl:"
 	)
-	if rootlessutil.IsRootlessChild() {
-		slice = "user.slice"
-	}
 
 	if parent == "" {
 		if usingSystemd {

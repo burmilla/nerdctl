@@ -18,20 +18,14 @@ package image
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/clientutil"
-	"github.com/containerd/nerdctl/pkg/cosignutil"
 	"github.com/containerd/nerdctl/pkg/imgutil"
-	"github.com/containerd/nerdctl/pkg/ipfs"
 	"github.com/containerd/nerdctl/pkg/platformutil"
-	"github.com/containerd/nerdctl/pkg/referenceutil"
 	"github.com/containerd/nerdctl/pkg/strutil"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
@@ -66,46 +60,9 @@ func EnsureImage(ctx context.Context, client *containerd.Client, rawRef string, 
 
 	var ensured *imgutil.EnsuredImage
 
-	if scheme, ref, err := referenceutil.ParseIPFSRefWithScheme(rawRef); err == nil {
-		if options.Verify != "none" {
-			return nil, errors.New("--verify flag is not supported on IPFS as of now")
-		}
-
-		var ipfsPath *string
-		if options.IPFSAddress != "" {
-			dir, err := os.MkdirTemp("", "apidirtmp")
-			if err != nil {
-				return nil, err
-			}
-			defer os.RemoveAll(dir)
-			if err := os.WriteFile(filepath.Join(dir, "api"), []byte(options.IPFSAddress), 0600); err != nil {
-				return nil, err
-			}
-			ipfsPath = &dir
-		}
-
-		ensured, err = ipfs.EnsureImage(ctx, client, stdout, stderr, options.GOptions.Snapshotter, scheme, ref,
-			pull, ocispecPlatforms, unpack, quiet, ipfsPath)
-		if err != nil {
-			return nil, err
-		}
-		return ensured, nil
-	}
-
 	ref := rawRef
 	var err error
 	switch options.Verify {
-	case "cosign":
-		experimental := options.GOptions.Experimental
-
-		if !experimental {
-			return nil, fmt.Errorf("cosign only work with enable experimental feature")
-		}
-
-		ref, err = cosignutil.VerifyCosign(ctx, rawRef, options.CosignKey, options.GOptions.HostsDir)
-		if err != nil {
-			return nil, err
-		}
 	case "none":
 		logrus.Debugf("verification process skipped")
 	default:

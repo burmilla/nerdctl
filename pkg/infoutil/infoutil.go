@@ -29,7 +29,6 @@ import (
 	"github.com/containerd/containerd"
 	ptypes "github.com/containerd/containerd/protobuf/types"
 	"github.com/containerd/containerd/services/introspection"
-	"github.com/containerd/nerdctl/pkg/buildkitutil"
 	"github.com/containerd/nerdctl/pkg/inspecttypes/dockercompat"
 	"github.com/containerd/nerdctl/pkg/inspecttypes/native"
 	"github.com/containerd/nerdctl/pkg/logging"
@@ -115,14 +114,12 @@ func GetSnapshotterNames(ctx context.Context, introService introspection.Service
 
 func ClientVersion() dockercompat.ClientVersion {
 	return dockercompat.ClientVersion{
-		Version:   version.Version,
-		GitCommit: version.Revision,
-		GoVersion: runtime.Version(),
-		Os:        runtime.GOOS,
-		Arch:      runtime.GOARCH,
-		Components: []dockercompat.ComponentVersion{
-			buildctlVersion(),
-		},
+		Version:    version.Version,
+		GitCommit:  version.Revision,
+		GoVersion:  runtime.Version(),
+		Os:         runtime.GOOS,
+		Arch:       runtime.GOARCH,
+		Components: []dockercompat.ComponentVersion{},
 	}
 }
 
@@ -155,51 +152,6 @@ func ServerSemVer(ctx context.Context, client *containerd.Client) (*semver.Versi
 		return nil, fmt.Errorf("failed to parse the containerd version %q: %w", v.Version, err)
 	}
 	return sv, nil
-}
-
-func buildctlVersion() dockercompat.ComponentVersion {
-	buildctlBinary, err := buildkitutil.BuildctlBinary()
-	if err != nil {
-		logrus.Warnf("unable to determine buildctl version: %s", err.Error())
-		return dockercompat.ComponentVersion{Name: "buildctl"}
-	}
-
-	stdout, err := exec.Command(buildctlBinary, "--version").Output()
-	if err != nil {
-		logrus.Warnf("unable to determine buildctl version: %s", err.Error())
-		return dockercompat.ComponentVersion{Name: "buildctl"}
-	}
-
-	v, err := parseBuildctlVersion(stdout)
-	if err != nil {
-		logrus.Warn(err)
-		return dockercompat.ComponentVersion{Name: "buildctl"}
-	}
-	return *v
-}
-
-func parseBuildctlVersion(buildctlVersionStdout []byte) (*dockercompat.ComponentVersion, error) {
-	fields := strings.Fields(strings.TrimSpace(string(buildctlVersionStdout)))
-	var v *dockercompat.ComponentVersion
-	switch len(fields) {
-	case 4:
-		v = &dockercompat.ComponentVersion{
-			Name:    fields[0],
-			Version: fields[2],
-			Details: map[string]string{"GitCommit": fields[3]},
-		}
-	case 3:
-		v = &dockercompat.ComponentVersion{
-			Name:    fields[0],
-			Version: fields[2],
-		}
-	default:
-		return nil, fmt.Errorf("unable to determine buildctl version, got %q", string(buildctlVersionStdout))
-	}
-	if v.Name != "buildctl" {
-		return nil, fmt.Errorf("unable to determine buildctl version, got %q", string(buildctlVersionStdout))
-	}
-	return v, nil
 }
 
 func runcVersion() dockercompat.ComponentVersion {
