@@ -20,6 +20,8 @@ type LoadCommandOptions struct {
 	GOptions GlobalCommandOptions
 	// Input read from tar archive file, instead of STDIN
 	Input string
+	// Suppress the load output
+	Quiet bool
 	// Platform import content for a specific platform
 	Platform []string
 	// AllPlatforms import content for all platforms

@@ -72,7 +72,11 @@ func Load(ctx context.Context, stdin io.Reader, stdout io.Writer, options types.
 	if err != nil {
 		return err
 	}
-	return loadImage(ctx, decompressor, stdout, options, platMC, false)
+	quiet := false
+	if options.Quiet {
+		quiet = true
+	}
+	return loadImage(ctx, decompressor, stdout, options, platMC, quiet)
 }
 
 func loadImage(ctx context.Context, in io.Reader, stdout io.Writer, options types.LoadCommandOptions, platMC platforms.MatchComparer, quiet bool) error {
@@ -108,9 +112,7 @@ func loadImage(ctx context.Context, in io.Reader, stdout io.Writer, options type
 		if err != nil {
 			return err
 		}
-		if quiet {
-			fmt.Fprintln(stdout, img.Target.Digest)
-		} else {
+		if !quiet {
 			fmt.Fprintf(stdout, "Loaded image: %s\n", img.Name)
 		}
 	}
