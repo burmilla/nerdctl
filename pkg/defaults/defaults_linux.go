@@ -17,8 +17,6 @@
 package defaults
 
 import (
-	"os"
-
 	"github.com/containerd/containerd/plugin"
 	gocni "github.com/containerd/go-cni"
 )
@@ -31,19 +29,6 @@ func DataRoot() string {
 }
 
 func CNIPath() string {
-	candidates := []string{
-		"/usr/local/libexec/cni",
-		"/usr/local/lib/cni",
-		"/usr/libexec/cni", // Fedora
-		"/usr/lib/cni",     // debian (containernetworking-plugins)
-	}
-
-	for _, f := range candidates {
-		if _, err := os.Stat(f); err == nil {
-			return f
-		}
-	}
-
 	// default: /opt/cni/bin
 	return gocni.DefaultCNIDir
 }

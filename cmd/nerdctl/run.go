@@ -97,8 +97,6 @@ func newRunCommand() *cobra.Command {
 }
 
 func setCreateFlags(cmd *cobra.Command) {
-
-	// No "-h" alias for "--help", because "-h" for "--hostname".
 	cmd.Flags().Bool("help", false, "show help")
 
 	cmd.Flags().BoolP("tty", "t", false, "Allocate a pseudo-TTY")
@@ -506,47 +504,6 @@ func createContainer(ctx context.Context, cmd *cobra.Command, client *containerd
 		return nil, nil, err
 	}
 	cOpts = append(cOpts, withStop(stopSignal, stopTimeout, ensuredImage))
-
-	hostname := id[0:12]
-	customHostname, err := cmd.Flags().GetString("hostname")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	uts, err := cmd.Flags().GetString("uts")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if customHostname != "" {
-		// Docker considers this a validation error so keep compat.
-		if uts != "" {
-			return nil, nil, errors.New("conflicting options: hostname and UTS mode")
-		}
-		hostname = customHostname
-	}
-	if uts == "" {
-		opts = append(opts, oci.WithHostname(hostname))
-		internalLabels.hostname = hostname
-		// `/etc/hostname` does not exist on FreeBSD
-		if runtime.GOOS == "linux" {
-			hostnamePath := filepath.Join(stateDir, "hostname")
-			if err := os.WriteFile(hostnamePath, []byte(hostname+"\n"), 0644); err != nil {
-				return nil, nil, err
-			}
-			opts = append(opts, withCustomEtcHostname(hostnamePath))
-		}
-	}
-
-	netOpts, netSlice, ipAddress, ports, macAddress, err := generateNetOpts(cmd, globalOptions, dataStore, stateDir, globalOptions.Namespace, id)
-	if err != nil {
-		return nil, nil, err
-	}
-	internalLabels.networks = netSlice
-	internalLabels.ipAddress = ipAddress
-	internalLabels.ports = ports
-	internalLabels.macAddress = macAddress
-	opts = append(opts, netOpts...)
 
 	hookOpt, err := withNerdctlOCIHook(cmd, id)
 	if err != nil {
@@ -959,13 +916,11 @@ type internalLabels struct {
 	extraHosts []string
 	pidFile    string
 	// labels from cmd options or automatically set
-	name     string
-	hostname string
+	name string
 	// automatically generated
 	stateDir string
 	// network
 	networks   []string
-	ipAddress  string
 	ports      []gocni.PortMapping
 	macAddress string
 	// volumn
@@ -983,7 +938,6 @@ func withInternalLabels(internalLabels internalLabels) (containerd.NewContainerO
 	if internalLabels.name != "" {
 		m[labels.Name] = internalLabels.name
 	}
-	m[labels.Hostname] = internalLabels.hostname
 	extraHostsJSON, err := json.Marshal(internalLabels.extraHosts)
 	if err != nil {
 		return nil, err
@@ -1015,10 +969,6 @@ func withInternalLabels(internalLabels internalLabels) (containerd.NewContainerO
 
 	if internalLabels.pidFile != "" {
 		m[labels.PIDFile] = internalLabels.pidFile
-	}
-
-	if internalLabels.ipAddress != "" {
-		m[labels.IPAddress] = internalLabels.ipAddress
 	}
 
 	m[labels.Platform], err = platformutil.NormalizeString(internalLabels.platform)

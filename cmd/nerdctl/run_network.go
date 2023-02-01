@@ -131,10 +131,7 @@ func generateNetOpts(cmd *cobra.Command, globalOptions types.GlobalCommandOption
 	}
 
 	ports := make([]gocni.PortMapping, 0)
-	netType, err := nettype.Detect(netSlice)
-	if err != nil {
-		return nil, nil, "", nil, "", err
-	}
+	netType := nettype.Host
 
 	switch netType {
 	case nettype.None:
