@@ -126,7 +126,8 @@ func newHandlerOpts(state *specs.State, dataStore, cniPath, cniNetconfPath strin
 		return nil, err
 	}
 
-	netType := nettype.Host
+	// System containers does not need network
+	netType := nettype.None
 
 	switch netType {
 	case nettype.Host, nettype.None, nettype.Container:
