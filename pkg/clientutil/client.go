@@ -35,9 +35,9 @@ import (
 
 func NewClient(ctx context.Context, namespace, address string, opts ...containerd.ClientOpt) (*containerd.Client, context.Context, context.CancelFunc, error) {
 
-	ctx = namespaces.WithNamespace(ctx, "burmillaos")
+	ctx = namespaces.WithNamespace(ctx, namespace)
 
-	address = "/var/run/containerd/containerd.sock"
+	address = strings.TrimPrefix(address, "unix://")
 	if err := systemutil.IsSocketAccessible(address); err != nil {
 		err = fmt.Errorf("cannot access containerd socket %q: %w", address, err)
 		return nil, nil, nil, err

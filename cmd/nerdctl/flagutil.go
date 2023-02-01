@@ -19,8 +19,25 @@ package main
 import (
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/spf13/cobra"
+
+	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/defaults"
+	ncdefaults "github.com/containerd/nerdctl/pkg/defaults"
 )
 
 func processRootCmdFlags(cmd *cobra.Command) (types.GlobalCommandOptions, error) {
-	return types.GlobalCommandOptions{}, nil
+	return types.GlobalCommandOptions{
+		Debug:            false,
+		DebugFull:        false,
+		Address:          defaults.DefaultAddress,
+		Namespace:        "burmillaos",
+		Snapshotter:      containerd.DefaultSnapshotter,
+		CNIPath:          ncdefaults.CNIPath(),
+		CNINetConfPath:   ncdefaults.CNINetConfPath(),
+		DataRoot:         ncdefaults.DataRoot(),
+		CgroupManager:    ncdefaults.CgroupManager(),
+		InsecureRegistry: false,
+		HostsDir:         ncdefaults.HostsDirs(),
+		Experimental:     true,
+	}, nil
 }

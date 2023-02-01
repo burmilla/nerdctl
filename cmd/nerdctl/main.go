@@ -25,7 +25,6 @@ import (
 	"strings"
 	"time"
 
-	ncdefaults "github.com/containerd/nerdctl/pkg/defaults"
 	"github.com/containerd/nerdctl/pkg/errutil"
 	"github.com/containerd/nerdctl/pkg/logging"
 	"github.com/fatih/color"
@@ -133,21 +132,11 @@ func initRootCmdFlags(rootCmd *cobra.Command, tomlPath string) (*pflag.FlagSet, 
 }
 
 func newApp() (*cobra.Command, error) {
-
-	tomlPath := ncdefaults.NerdctlTOML()
-	if v, ok := os.LookupEnv("NERDCTL_TOML"); ok {
-		tomlPath = v
-	}
-
 	short := "nerdctl is a command line interface for containerd"
-	long := fmt.Sprintf(`%s
-
-Config file ($NERDCTL_TOML): %s
-`, short, tomlPath)
 	var rootCmd = &cobra.Command{
 		Use:              "nerdctl",
 		Short:            short,
-		Long:             long,
+		Long:             short,
 		Version:          "BurmillaOS custom",
 		SilenceUsage:     true,
 		SilenceErrors:    true,
@@ -155,10 +144,6 @@ Config file ($NERDCTL_TOML): %s
 	}
 
 	rootCmd.SetUsageFunc(usage)
-	aliasToBeInherited, err := initRootCmdFlags(rootCmd, tomlPath)
-	if err != nil {
-		return nil, err
-	}
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		globalOptions, err := processRootCmdFlags(cmd)
@@ -242,11 +227,6 @@ Config file ($NERDCTL_TOML): %s
 		// Logout
 		newLogoutCommand(),
 	)
-
-	// add aliasToBeInherited to subCommand(s) InheritedFlags
-	for _, subCmd := range rootCmd.Commands() {
-		subCmd.InheritedFlags().AddFlagSet(aliasToBeInherited)
-	}
 	return rootCmd, nil
 }
 
