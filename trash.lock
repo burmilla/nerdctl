@@ -1,6 +1,4 @@
 import:
-- package: github.com/Microsoft/go-winio
-  version: v0.6.0
 - package: github.com/compose-spec/compose-go
   version: v1.9.0
 - package: github.com/containerd/accelerated-container-image
@@ -93,7 +91,7 @@ import:
   version: v0.4.0
 - package: golang.org/x/text
   version: v0.6.0
+- package: gopkg.in/yaml.v2
+  version: v2.4.0
 - package: gopkg.in/yaml.v3
   version: v3.0.1
-- package: gotest.tools/v3
-  version: v3.4.0
