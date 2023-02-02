@@ -206,7 +206,6 @@ func newApp() (*cobra.Command, error) {
 
 		// stats
 		newTopCommand(),
-		newStatsCommand(),
 
 		// #region Management
 		newContainerCommand(),

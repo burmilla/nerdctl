@@ -39,10 +39,7 @@ func newImageCommand() *cobra.Command {
 		newSaveCommand(),
 		newTagCommand(),
 		imageRmCommand(),
-		newImageConvertCommand(),
 		newImageInspectCommand(),
-		newImageEncryptCommand(),
-		newImageDecryptCommand(),
 		newImagePruneCommand(),
 	)
 	return cmd

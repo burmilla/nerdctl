@@ -116,8 +116,7 @@ func setCreateFlags(cmd *cobra.Command) {
 	cmd.Flags().String("platform", "", "Set platform (e.g. \"amd64\", \"arm64\")") // not a slice, and there is no --all-platforms
 	// #endregion
 
-	cmd.Flags().String("ipc", "", `IPC namespace to use ("host"|"private")`)
-	// #region cgroups, namespaces, and ulimits flags
+	cmd.Flags().String("ipc", "", `IPC namespace to use ("host"|"private")`)s
 	cmd.Flags().Float64("cpus", 0.0, "Number of CPUs")
 	cmd.Flags().StringP("memory", "m", "", "Memory limit")
 	cmd.Flags().String("memory-reservation", "", "Memory soft limit")
