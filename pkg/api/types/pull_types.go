@@ -35,6 +35,4 @@ type ImagePullOptions struct {
 	CosignKey string
 	// Suppress verbose output
 	Quiet bool
-	// multiaddr of IPFS API (default uses $IPFS_PATH env variable if defined or local directory ~/.ipfs)
-	IPFSAddress string
 }

@@ -26,7 +26,7 @@ import (
 func newPullCommand() *cobra.Command {
 	var pullCommand = &cobra.Command{
 		Use:           "pull [flags] NAME[:TAG]",
-		Short:         "Pull an image from a registry. Optionally specify \"ipfs://\" or \"ipns://\" scheme to pull image from IPFS.",
+		Short:         "Pull an image from a registry.",
 		Args:          IsExactArgs(1),
 		RunE:          pullAction,
 		SilenceUsage:  true,
@@ -53,8 +53,6 @@ func newPullCommand() *cobra.Command {
 	// #endregion
 
 	pullCommand.Flags().BoolP("quiet", "q", false, "Suppress verbose output")
-
-	pullCommand.Flags().String("ipfs-address", "", "multiaddr of IPFS API (default uses $IPFS_PATH env variable if defined or local directory ~/.ipfs)")
 
 	return pullCommand
 }
@@ -89,10 +87,6 @@ func processPullCommandFlags(cmd *cobra.Command) (types.ImagePullOptions, error)
 	if err != nil {
 		return types.ImagePullOptions{}, err
 	}
-	ipfsAddressStr, err := cmd.Flags().GetString("ipfs-address")
-	if err != nil {
-		return types.ImagePullOptions{}, err
-	}
 	return types.ImagePullOptions{
 		GOptions:     globalOptions,
 		AllPlatforms: allPlatforms,
@@ -101,7 +95,6 @@ func processPullCommandFlags(cmd *cobra.Command) (types.ImagePullOptions, error)
 		Quiet:        quiet,
 		Verify:       verifier,
 		CosignKey:    cosignKey,
-		IPFSAddress:  ipfsAddressStr,
 		Stdout:       cmd.OutOrStdout(),
 		Stderr:       cmd.OutOrStderr(),
 	}, nil

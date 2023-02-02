@@ -158,10 +158,6 @@ type ImagePushOptions struct {
 
 	// Estargz convert image to sStargz
 	Estargz bool
-	// IpfsEnsureImage ensure image is pushed to IPFS
-	IpfsEnsureImage bool
-	// IpfsAddress multiaddr of IPFS API (default uses $IPFS_PATH env variable if defined or local directory ~/.ipfs)
-	IpfsAddress string
 	// Sign the image (none|cosign)
 	Sign string
 	// CosignKey Path to the private key file, KMS URI or Kubernetes Secret for --sign=cosign

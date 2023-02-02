@@ -15,9 +15,9 @@ import:
   repo: https://github.com/burmilla/containerd
 - package: github.com/containerd/continuity
   version: v0.3.0
+- package: github.com/containerd/fifo
+  version: v1.0.0
 - package: github.com/containerd/go-cni
-  version: v1.1.7
-- package: github.com/containerd/imgcrypt
   version: v1.1.7
 - package: github.com/containerd/nydus-snapshotter
   version: v0.5.1

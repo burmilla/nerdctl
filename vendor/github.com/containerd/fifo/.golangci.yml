@@ -6,15 +6,15 @@ linters:
     - unconvert
     - gofmt
     - goimports
-    - revive
+    - golint
     - ineffassign
     - vet
     - unused
     - misspell
+  disable:
+    - errcheck
 
 run:
+  timeout: 3m
   skip-dirs:
-    - cmd/ctr/commands/run
-    - cmd/ctr/commands/images
-    - cmd\\ctr\\commands\\run
-    - cmd\\ctr\\commands\\images
+    - vendor

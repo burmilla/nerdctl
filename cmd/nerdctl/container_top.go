@@ -18,14 +18,11 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/clientutil"
 	"github.com/containerd/nerdctl/pkg/cmd/container"
-	"github.com/containerd/nerdctl/pkg/infoutil"
-	"github.com/containerd/nerdctl/pkg/rootlessutil"
 
 	"github.com/spf13/cobra"
 )
@@ -50,9 +47,6 @@ func topAction(cmd *cobra.Command, args []string) error {
 	globalOptions, err := processRootCmdFlags(cmd)
 	if err != nil {
 		return err
-	}
-	if rootlessutil.IsRootless() && infoutil.CgroupsVersion() == "1" {
-		return fmt.Errorf("top requires cgroup v2 for rootless containers, see https://rootlesscontaine.rs/getting-started/common/cgroup2/")
 	}
 
 	if globalOptions.CgroupManager == "none" {

@@ -26,7 +26,6 @@ import (
 	"github.com/containerd/containerd/containers"
 	"github.com/containerd/containerd/oci"
 	"github.com/containerd/nerdctl/pkg/api/types"
-	"github.com/containerd/nerdctl/pkg/infoutil"
 	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	"github.com/docker/go-units"
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -228,9 +227,6 @@ func generateCgroupOpts(cmd *cobra.Command, globalOptions types.GlobalCommandOpt
 	if err != nil {
 		return nil, err
 	}
-	if len(cgroupConf) > 0 && infoutil.CgroupsVersion() == "1" {
-		return nil, errors.New("cannot use --cgroup-conf without cgroup v2")
-	}
 
 	unifieds := make(map[string]string)
 	for _, unified := range cgroupConf {
@@ -245,10 +241,6 @@ func generateCgroupOpts(cmd *cobra.Command, globalOptions types.GlobalCommandOpt
 	blkioWeight, err := cmd.Flags().GetUint16("blkio-weight")
 	if err != nil {
 		return nil, err
-	}
-	if blkioWeight != 0 && !infoutil.BlockIOWeight(globalOptions.CgroupManager) {
-		logrus.Warn("kernel support for cgroup blkio weight missing, weight discarded")
-		blkioWeight = 0
 	}
 	if blkioWeight > 0 && blkioWeight < 10 || blkioWeight > 1000 {
 		return nil, errors.New("range of blkio weight is from 10 to 1000")

@@ -68,7 +68,7 @@ const (
 )
 
 func newRunCommand() *cobra.Command {
-	shortHelp := "Run a command in a new container. Optionally specify \"ipfs://\" or \"ipns://\" scheme to pull image from IPFS."
+	shortHelp := "Run a command in a new container."
 	longHelp := shortHelp
 	switch runtime.GOOS {
 	case "windows":
@@ -276,8 +276,6 @@ func setCreateFlags(cmd *cobra.Command) {
 	})
 	cmd.Flags().String("cosign-key", "", "Path to the public key file, KMS, URI or Kubernetes Secret for --verify=cosign")
 	// #endregion
-
-	cmd.Flags().String("ipfs-address", "", "multiaddr of IPFS API (default uses $IPFS_PATH env variable if defined or local directory ~/.ipfs)")
 
 	cmd.Flags().String("isolation", "default", "Specify isolation technology for container. On Linux the only valid value is default. Windows options are host, process and hyperv with process isolation as the default")
 	cmd.RegisterFlagCompletionFunc("isolation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -763,16 +761,11 @@ func processPullCommandFlagsInRun(cmd *cobra.Command) (types.ImagePullOptions, e
 	if err != nil {
 		return types.ImagePullOptions{}, err
 	}
-	ipfsAddressStr, err := cmd.Flags().GetString("ipfs-address")
-	if err != nil {
-		return types.ImagePullOptions{}, err
-	}
 	return types.ImagePullOptions{
-		Verify:      verifier,
-		CosignKey:   cosignKey,
-		IPFSAddress: ipfsAddressStr,
-		Stdout:      cmd.OutOrStdout(),
-		Stderr:      cmd.ErrOrStderr(),
+		Verify:    verifier,
+		CosignKey: cosignKey,
+		Stdout:    cmd.OutOrStdout(),
+		Stderr:    cmd.ErrOrStderr(),
 	}, nil
 }
 

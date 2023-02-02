@@ -35,7 +35,6 @@ func newComposeCommand() *cobra.Command {
 	composeCommand.PersistentFlags().String("project-directory", "", "Specify an alternate working directory")
 	composeCommand.PersistentFlags().StringP("project-name", "p", "", "Specify an alternate project name")
 	composeCommand.PersistentFlags().String("env-file", "", "Specify an alternate environment file")
-	composeCommand.PersistentFlags().String("ipfs-address", "", "multiaddr of IPFS API (default uses $IPFS_PATH env variable if defined or local directory ~/.ipfs)")
 
 	composeCommand.AddCommand(
 		newComposeUpCommand(),
@@ -83,11 +82,6 @@ func getComposeOptions(cmd *cobra.Command, debugFull, experimental bool) (compos
 	if err != nil {
 		return composer.Options{}, err
 	}
-	ipfsAddressStr, err := cmd.Flags().GetString("ipfs-address")
-	if err != nil {
-		return composer.Options{}, err
-	}
-
 	return composer.Options{
 		Project:          projectName,
 		ProjectDirectory: projectDirectory,
@@ -97,6 +91,5 @@ func getComposeOptions(cmd *cobra.Command, debugFull, experimental bool) (compos
 		NerdctlArgs:      nerdctlArgs,
 		DebugPrintFull:   debugFull,
 		Experimental:     experimental,
-		IPFSAddress:      ipfsAddressStr,
 	}, nil
 }

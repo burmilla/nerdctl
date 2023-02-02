@@ -19,7 +19,6 @@ package referenceutil
 import (
 	"fmt"
 	"path"
-	"strings"
 
 	refdocker "github.com/containerd/containerd/reference/docker"
 	"github.com/ipfs/go-cid"
@@ -33,12 +32,8 @@ type Reference interface {
 }
 
 // ParseAny parses the passed reference with allowing it to be non-docker reference.
-// If the ref has IPFS scheme or can be parsed as CID, it's parsed as an IPFS reference.
 // Otherwise it's parsed as a docker reference.
 func ParseAny(rawRef string) (Reference, error) {
-	if scheme, ref, err := ParseIPFSRefWithScheme(rawRef); err == nil {
-		return stringRef{scheme: scheme, s: ref}, nil
-	}
 	if c, err := cid.Decode(rawRef); err == nil {
 		return c, nil
 	}
@@ -48,14 +43,6 @@ func ParseAny(rawRef string) (Reference, error) {
 // ParseDockerRef parses the passed reference with assuming it's a docker reference.
 func ParseDockerRef(rawRef string) (refdocker.Named, error) {
 	return refdocker.ParseDockerRef(rawRef)
-}
-
-// ParseIPFSRefWithScheme parses the passed reference with assuming it's an IPFS reference with scheme prefix.
-func ParseIPFSRefWithScheme(name string) (scheme, ref string, err error) {
-	if strings.HasPrefix(name, "ipfs://") || strings.HasPrefix(name, "ipns://") {
-		return name[:4], name[7:], nil
-	}
-	return "", "", fmt.Errorf("reference is not an IPFS reference")
 }
 
 type stringRef struct {
@@ -86,8 +73,6 @@ func SuggestContainerName(rawRef, containerID string) string {
 						name = imageNameBased + "-" + containerID[:shortIDLength]
 					}
 				}
-			case cid.Cid:
-				name = "ipfs" + "-" + rr.String()[:shortIDLength] + "-" + containerID[:shortIDLength]
 			case stringRef:
 				name = rr.scheme + "-" + rr.s[:shortIDLength] + "-" + containerID[:shortIDLength]
 			}

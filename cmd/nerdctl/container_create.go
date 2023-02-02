@@ -25,7 +25,7 @@ import (
 )
 
 func newCreateCommand() *cobra.Command {
-	shortHelp := "Create a new container. Optionally specify \"ipfs://\" or \"ipns://\" scheme to pull image from IPFS."
+	shortHelp := "Create a new container."
 	longHelp := shortHelp
 	switch runtime.GOOS {
 	case "windows":

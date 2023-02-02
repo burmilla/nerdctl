@@ -305,9 +305,6 @@ Config file ($NERDCTL_TOML): %s
 
 		// Compose
 		newComposeCommand(),
-
-		// IPFS
-		newIPFSCommand(),
 	)
 	addApparmorCommand(rootCmd)
 	addCpCommand(rootCmd)

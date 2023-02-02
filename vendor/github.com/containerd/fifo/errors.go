@@ -14,29 +14,15 @@
    limitations under the License.
 */
 
-package encryption
+package fifo
 
-import "github.com/gogo/protobuf/types"
+import "errors"
 
-// pbAny takes proto-generated Any type.
-// https://developers.google.com/protocol-buffers/docs/proto3#any
-type pbAny interface {
-	GetTypeUrl() string
-	GetValue() []byte
-}
-
-func fromAny(from pbAny) *types.Any {
-	if from == nil {
-		return nil
-	}
-
-	pbany, ok := from.(*types.Any)
-	if ok {
-		return pbany
-	}
-
-	return &types.Any{
-		TypeUrl: from.GetTypeUrl(),
-		Value:   from.GetValue(),
-	}
-}
+var (
+	ErrClosed      = errors.New("fifo closed")
+	ErrCtrlClosed  = errors.New("control of closed fifo")
+	ErrRdFrmWRONLY = errors.New("reading from write-only fifo")
+	ErrReadClosed  = errors.New("reading from a closed fifo")
+	ErrWrToRDONLY  = errors.New("writing to read-only fifo")
+	ErrWriteClosed = errors.New("writing to a closed fifo")
+)

@@ -24,9 +24,7 @@ import (
 	"text/template"
 
 	"github.com/containerd/nerdctl/pkg/api/types"
-	"github.com/containerd/nerdctl/pkg/clientutil"
 	"github.com/containerd/nerdctl/pkg/formatter"
-	"github.com/containerd/nerdctl/pkg/infoutil"
 	"github.com/containerd/nerdctl/pkg/inspecttypes/dockercompat"
 	"github.com/spf13/cobra"
 )
@@ -105,14 +103,6 @@ func versionAction(cmd *cobra.Command, args []string) error {
 // versionInfo may return partial VersionInfo on error
 func versionInfo(cmd *cobra.Command, globalOptions types.GlobalCommandOptions) (dockercompat.VersionInfo, error) {
 
-	v := dockercompat.VersionInfo{
-		Client: infoutil.ClientVersion(),
-	}
-	client, ctx, cancel, err := clientutil.NewClient(cmd.Context(), globalOptions.Namespace, globalOptions.Address)
-	if err != nil {
-		return v, err
-	}
-	defer cancel()
-	v.Server, err = infoutil.ServerVersion(ctx, client)
-	return v, err
+	v := dockercompat.VersionInfo{}
+	return v, nil
 }
