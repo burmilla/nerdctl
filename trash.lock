@@ -1,10 +1,13 @@
 import:
+- package: github.com/cilium/ebpf
+  version: v0.9.1
 - package: github.com/compose-spec/compose-go
   version: v1.9.0
 - package: github.com/containerd/accelerated-container-image
   version: v0.6.0
 - package: github.com/containerd/cgroups
-  version: v3.0.1
+  version: eac1b00c8f16fd610f643ee1f34591ad8d452b49
+  repo: https://github.com/burmilla/cgroups
 - package: github.com/containerd/console
   version: v1.0.3
 - package: github.com/containerd/containerd
