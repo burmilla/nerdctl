@@ -20,7 +20,6 @@ package main
 
 import (
 	"github.com/containerd/nerdctl/pkg/clientutil"
-	"github.com/containerd/nerdctl/pkg/infoutil"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -46,24 +45,5 @@ func shellCompleteNamespaceNames(cmd *cobra.Command, args []string, toComplete s
 	}
 	var candidates []string
 	candidates = append(candidates, nsList...)
-	return candidates, cobra.ShellCompDirectiveNoFileComp
-}
-
-func shellCompleteSnapshotterNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	globalOptions, err := processRootCmdFlags(cmd)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-	client, ctx, cancel, err := clientutil.NewClient(cmd.Context(), globalOptions.Namespace, globalOptions.Address)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-	defer cancel()
-	snapshotterPlugins, err := infoutil.GetSnapshotterNames(ctx, client.IntrospectionService())
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-	var candidates []string
-	candidates = append(candidates, snapshotterPlugins...)
 	return candidates, cobra.ShellCompDirectiveNoFileComp
 }

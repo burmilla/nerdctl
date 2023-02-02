@@ -30,8 +30,6 @@ import (
 	gocni "github.com/containerd/go-cni"
 	"github.com/containerd/nerdctl/pkg/dnsutil/hostsstore"
 	"github.com/containerd/nerdctl/pkg/labels"
-	"github.com/containerd/nerdctl/pkg/netutil"
-	"github.com/containerd/nerdctl/pkg/netutil/nettype"
 	types100 "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/opencontainers/runtime-spec/specs-go"
 
@@ -124,40 +122,6 @@ func newHandlerOpts(state *specs.State, dataStore, cniPath, cniNetconfPath strin
 	var networks []string
 	if err := json.Unmarshal([]byte(networksJSON), &networks); err != nil {
 		return nil, err
-	}
-
-	// System containers does not need network
-	netType := nettype.None
-
-	switch netType {
-	case nettype.Host, nettype.None, nettype.Container:
-		// NOP
-	case nettype.CNI:
-		e, err := netutil.NewCNIEnv(cniPath, cniNetconfPath, netutil.WithDefaultNetwork())
-		if err != nil {
-			return nil, err
-		}
-		cniOpts := []gocni.Opt{
-			gocni.WithPluginDir([]string{cniPath}),
-		}
-		netMap, err := e.NetworkMap()
-		if err != nil {
-			return nil, err
-		}
-		for _, netstr := range networks {
-			net, ok := netMap[netstr]
-			if !ok {
-				return nil, fmt.Errorf("no such network: %q", netstr)
-			}
-			cniOpts = append(cniOpts, gocni.WithConfListBytes(net.Bytes))
-			o.cniNames = append(o.cniNames, netstr)
-		}
-		o.cni, err = gocni.New(cniOpts...)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("unexpected network type %v", netType)
 	}
 
 	if pidFile := o.state.Annotations[labels.PIDFile]; pidFile != "" {

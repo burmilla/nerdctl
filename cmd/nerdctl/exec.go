@@ -32,7 +32,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/flagutil"
 	"github.com/containerd/nerdctl/pkg/idgen"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
-	"github.com/containerd/nerdctl/pkg/taskutil"
 	"github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/sirupsen/logrus"
@@ -139,14 +138,8 @@ func execActionWithContainer(ctx context.Context, cmd *cobra.Command, args []str
 	var (
 		ioCreator cio.Creator
 		in        io.Reader
-		stdinC    = &taskutil.StdinCloser{
-			Stdin: os.Stdin,
-		}
 	)
 
-	if flagI {
-		in = stdinC
-	}
 	cioOpts := []cio.Opt{cio.WithStreams(in, os.Stdout, os.Stderr)}
 	if flagT {
 		cioOpts = append(cioOpts, cio.WithTerminal)
@@ -157,9 +150,6 @@ func execActionWithContainer(ctx context.Context, cmd *cobra.Command, args []str
 	process, err := task.Exec(ctx, execID, pspec, ioCreator)
 	if err != nil {
 		return err
-	}
-	stdinC.Closer = func() {
-		process.CloseIO(ctx, containerd.WithStdinCloser)
 	}
 	// if detach, we should not call this defer
 	if !flagD {

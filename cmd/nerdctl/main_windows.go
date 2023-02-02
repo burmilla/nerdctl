@@ -28,10 +28,6 @@ func shellCompleteNamespaceNames(cmd *cobra.Command, args []string, toComplete s
 	return nil, cobra.ShellCompDirectiveNoFileComp
 }
 
-func shellCompleteSnapshotterNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return nil, cobra.ShellCompDirectiveNoFileComp
-}
-
 func shellCompleteCgroupManagerNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return nil, cobra.ShellCompDirectiveNoFileComp
 }

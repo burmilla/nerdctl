@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"strings"
 
 	"github.com/containerd/console"
 	"github.com/containerd/containerd"
@@ -35,9 +34,7 @@ import (
 	"github.com/containerd/nerdctl/pkg/formatter"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/labels"
-	"github.com/containerd/nerdctl/pkg/netutil/nettype"
 	"github.com/containerd/nerdctl/pkg/taskutil"
-	"github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -199,37 +196,6 @@ func reconfigNetContainer(ctx context.Context, c containerd.Container, client *c
 	var networks []string
 	if err := json.Unmarshal([]byte(networksJSON), &networks); err != nil {
 		return err
-	}
-	netType, err := nettype.Detect(networks)
-	if err != nil {
-		return err
-	}
-	if netType == nettype.Container {
-		network := strings.Split(networks[0], ":")
-		if len(network) != 2 {
-			return fmt.Errorf("invalid network: %s, should be \"container:<id|name>\"", networks[0])
-		}
-		targetCon, err := client.LoadContainer(ctx, network[1])
-		if err != nil {
-			return err
-		}
-		netNSPath, err := containerutil.ContainerNetNSPath(ctx, targetCon)
-		if err != nil {
-			return err
-		}
-		spec, err := c.Spec(ctx)
-		if err != nil {
-			return err
-		}
-		err = c.Update(ctx, containerd.UpdateContainerOpts(
-			containerd.WithSpec(spec, oci.WithLinuxNamespace(
-				specs.LinuxNamespace{
-					Type: specs.NetworkNamespace,
-					Path: netNSPath,
-				}))))
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil

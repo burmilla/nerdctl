@@ -29,7 +29,6 @@ func newSystemCommand() *cobra.Command {
 	}
 	// versionCommand is not here
 	systemCommand.AddCommand(
-		newInfoCommand(),
 		newSystemPruneCommand(),
 	)
 	return systemCommand

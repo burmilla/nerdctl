@@ -201,10 +201,6 @@ func newApp() (*cobra.Command, error) {
 		newHistoryCommand(),
 		// #endregion
 
-		// #region System
-		newInfoCommand(),
-		// #endregion
-
 		// Inspect
 		newInspectCommand(),
 

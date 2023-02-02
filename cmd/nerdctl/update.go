@@ -31,7 +31,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/clientutil"
 	"github.com/containerd/nerdctl/pkg/formatter"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
-	"github.com/containerd/nerdctl/pkg/infoutil"
 	"github.com/containerd/typeurl"
 	"github.com/docker/go-units"
 	runtimespec "github.com/opencontainers/runtime-spec/specs-go"
@@ -216,9 +215,6 @@ func getUpdateOption(cmd *cobra.Command, globalOptions types.GlobalCommandOption
 	blkioWeight, err := cmd.Flags().GetUint16("blkio-weight")
 	if err != nil {
 		return options, err
-	}
-	if blkioWeight != 0 && !infoutil.BlockIOWeight(globalOptions.CgroupManager) {
-		return options, fmt.Errorf("kernel support for cgroup blkio weight missing, weight discarded")
 	}
 	if blkioWeight > 0 && blkioWeight < 10 || blkioWeight > 1000 {
 		return options, errors.New("range of blkio weight is from 10 to 1000")
