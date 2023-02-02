@@ -60,12 +60,26 @@ import:
   version: v1.14.1
 - package: github.com/fluent/fluent-logger-golang
   version: v1.9.0
+- package: github.com/golang/protobuf
+  version: 5d5e8c018a13017f9d5b8bf4fad64aaa42a87308
+- package: github.com/google/uuid
+  version: 44b5fee7c49cf3bcdf723f106b36d56ef13ccc88
+- package: github.com/hashicorp/errwrap
+  version: 3622ed43b5c382494ba1496673ff8d4a9d4f6ea7
 - package: github.com/hashicorp/go-multierror
   version: v1.1.1
+- package: github.com/imdario/mergo
+  version: 6d2237a59c57f46c2a9f99d1d57a71fb3efc0943
+- package: github.com/klauspost/compress/zstd
+  version: v1.15.11
 - package: github.com/mattn/go-isatty
   version: v0.0.17
+- package: github.com/mattn/go-shellwords
+  version: f3bbb6f7f6510c6059561a79e3f105578be4fcce
 - package: github.com/mitchellh/mapstructure
   version: v1.5.0
+- package: github.com/moby/locker
+  version: 281af2d563954745bea9d1487c965f24d30742fe
 - package: github.com/moby/sys
   version: c161267cd2212985f81a50a029001f82c91bca7f
 - package: github.com/opencontainers/go-digest
@@ -76,8 +90,14 @@ import:
   version: v1.1.4
 - package: github.com/opencontainers/runtime-spec
   version: v1.1.0-rc.1
+- package: github.com/opencontainers/selinux
+  version: 9538649b3d77f1c8a700b914c9ccd9e931be182d
 - package: github.com/pelletier/go-toml
   version: v1.9.5
+- package: github.com/philhofer/fwd
+  version: 2ae61b800e4526d6b6538e26512b8ea1845550ea
+- package: github.com/pkg/errors
+  version: 5dd12d0cfe7f152f80558d591504ce685299311e
 - package: github.com/rootless-containers/bypass4netns
   version: v0.3.0
 - package: github.com/rootless-containers/rootlesskit
@@ -90,6 +110,10 @@ import:
   version: v1.0.5
 - package: github.com/tidwall/gjson
   version: v1.14.4
+- package: github.com/tidwall/match
+  version: 4c9fc61b493b7aa0a3d347e9190aa78c5bec09cf
+- package: github.com/tidwall/pretty
+  version: 9090695766b652478676cc3e55bc3187056b1ff0
 - package: github.com/tinylib/msgp
   version: v1.1.6
 - package: github.com/urfave/cli
@@ -100,6 +124,10 @@ import:
   version: v1.2.1-beta.2
 - package: github.com/vishvananda/netns
   version: v0.0.4
+- package: github.com/xeipuuv/gojsonschema
+  version: b076d39a02e5015af0a2a96636e4cc479ecd9f45
+- package: github.com/xrash/smetrics
+  version: 039620a656736e6ad994090895784a7af15e0b80
 - package: github.com/yuchanns/srslog
   version: v1.1.0
 - package: golang.org/x/net
