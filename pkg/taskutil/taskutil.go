@@ -29,7 +29,6 @@ import (
 	"github.com/containerd/console"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
-	"github.com/containerd/nerdctl/pkg/infoutil"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
 )
@@ -88,25 +87,6 @@ func NewTask(ctx context.Context, client *containerd.Client, container container
 			return nil, err
 		}
 		ioCreator = cio.LogURI(u)
-	} else {
-		var in io.Reader
-		if flagI {
-			if sv, err := infoutil.ServerSemVer(ctx, client); err != nil {
-				logrus.Warn(err)
-			}
-			var stdinC io.ReadCloser = &StdinCloser{
-				Stdin: os.Stdin,
-				Closer: func() {
-					if t, err := container.Task(ctx, nil); err != nil {
-						logrus.WithError(err).Debugf("failed to get task for StdinCloser")
-					} else {
-						t.CloseIO(ctx, containerd.WithStdinCloser)
-					}
-				},
-			}
-			in = stdinC
-		}
-		ioCreator = cio.NewCreator(cio.WithStreams(in, os.Stdout, os.Stderr))
 	}
 	t, err := container.NewTask(ctx, ioCreator)
 	if err != nil {
