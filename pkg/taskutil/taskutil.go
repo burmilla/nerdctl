@@ -26,7 +26,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/containerd/console"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
@@ -94,8 +93,6 @@ func NewTask(ctx context.Context, client *containerd.Client, container container
 		if flagI {
 			if sv, err := infoutil.ServerSemVer(ctx, client); err != nil {
 				logrus.Warn(err)
-			} else if sv.LessThan(semver.MustParse("1.6.0-0")) {
-				logrus.Warnf("`nerdctl (run|exec) -i` without `-t` expects containerd 1.6 or later, got containerd %v", sv)
 			}
 			var stdinC io.ReadCloser = &StdinCloser{
 				Stdin: os.Stdin,

@@ -25,9 +25,7 @@ import (
 	"net"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/containerd/nerdctl/pkg/defaults"
 	"github.com/containerd/nerdctl/pkg/strutil"
 	"github.com/containerd/nerdctl/pkg/systemutil"
@@ -251,33 +249,7 @@ func firewallPluginGEQ110(firewallPath string) (bool, error) {
 		return guessed, err
 	}
 
-	ver, err := guessFirewallPluginVersion(stderr.String()) // NOT stdout
-	if err != nil {
-		return guessed, fmt.Errorf("failed to guess the version of %q: %w", firewallPath, err)
-	}
-	ver110 := semver.MustParse("v1.1.0")
-	return ver.GreaterThan(ver110) || ver.Equal(ver110), nil
-}
-
-// guesssFirewallPluginVersion guess the version of the CNI firewall plugin (not the version of the implemented CNI spec).
-//
-// stderr is like "CNI firewall plugin v1.1.0\n", or "CNI firewall plugin version unknown\n"
-func guessFirewallPluginVersion(stderr string) (*semver.Version, error) {
-	const prefix = "CNI firewall plugin "
-	lines := strings.Split(stderr, "\n")
-	for i, l := range lines {
-		trimmed := strings.TrimPrefix(l, prefix)
-		if trimmed == l { // l does not have the expected prefix
-			continue
-		}
-		// trimmed is like "v1.1.1", "v1.1.0", ..., "v0.8.0", or "version unknown"
-		ver, err := semver.NewVersion(trimmed)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse %q (line %d of stderr=%q) as a semver: %w", trimmed, i+1, stderr, err)
-		}
-		return ver, nil
-	}
-	return nil, fmt.Errorf("stderr %q does not have any line that starts with %q", stderr, prefix)
+	return true, nil
 }
 
 func removeBridgeNetworkInterface(netIf string) error {
