@@ -24,7 +24,7 @@ import (
 	"sort"
 
 	"github.com/compose-spec/compose-go/dotenv"
-	"github.com/distribution/distribution/v3/reference"
+	"github.com/distribution/distribution/reference"
 	godigest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"

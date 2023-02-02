@@ -2,7 +2,8 @@ import:
 - package: github.com/cilium/ebpf
   version: v0.9.1
 - package: github.com/compose-spec/compose-go
-  version: v1.9.0
+  version: dcb4478d7dca13632d2285a90865659d28835ef5
+  repo: https://github.com/burmilla/compose-go
 - package: github.com/containerd/accelerated-container-image
   version: v0.6.0
 - package: github.com/containerd/cgroups
@@ -25,20 +26,32 @@ import:
   version: v0.14.1
 - package: github.com/containerd/stargz-snapshotter/estargz
   version: v0.14.1
+- package: github.com/containerd/ttrpc
+  version: 32fab237463884e228ee0de15e22346f66bcc87b
 - package: github.com/containerd/typeurl
   version: v2.0.0
 - package: github.com/containernetworking/cni
   version: v1.1.2
 - package: github.com/containernetworking/plugins
   version: v1.2.0
+- package: github.com/cpuguy83/go-md2man
+  version: v2.0.2
 - package: github.com/cyphar/filepath-securejoin
   version: v0.2.3
+- package: github.com/distribution/distribution
+  version: cf87e8d07e8d83d949f8e75fa27158d69fbe6195
+- package: github.com/djherbis/times
+  version: 199f81cf01420c24dcf099dd9abfa0396fba69a5
 - package: github.com/docker/cli
   version: v23.0.0-rc.3
 - package: github.com/docker/docker
   version: v23.0.0-rc.3
+- package: github.com/docker/docker-credential-helpers
+  version: d7835111fd00ef0c2f597b2130384df2c42c2745
 - package: github.com/docker/go-connections
   version: v0.4.0
+- package: github.com/docker/go-events
+  version: e31b211e4f1cd09aa76fe4ac244571fab96ae47f
 - package: github.com/docker/go-units
   version: v0.5.0
 - package: github.com/fahedouch/go-logrotate
@@ -49,16 +62,12 @@ import:
   version: v1.9.0
 - package: github.com/hashicorp/go-multierror
   version: v1.1.1
-- package: github.com/ipfs/go-cid
-  version: v0.3.2
 - package: github.com/mattn/go-isatty
   version: v0.0.17
 - package: github.com/mitchellh/mapstructure
   version: v1.5.0
 - package: github.com/moby/sys
   version: c161267cd2212985f81a50a029001f82c91bca7f
-- package: github.com/multiformats/go-varint
-  version: v0.0.7
 - package: github.com/opencontainers/go-digest
   version: v1.0.0
 - package: github.com/opencontainers/image-spec

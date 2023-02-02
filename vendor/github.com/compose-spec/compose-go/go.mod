@@ -3,7 +3,7 @@ module github.com/compose-spec/compose-go
 go 1.18
 
 require (
-	github.com/distribution/distribution/v3 v3.0.0-20221103125252-ebfa2a0ac0a9
+	github.com/distribution/distribution v3.0.0-20221103125252-ebfa2a0ac0a9
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.5.9
