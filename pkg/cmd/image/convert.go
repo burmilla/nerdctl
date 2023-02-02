@@ -35,7 +35,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/clientutil"
 	converterutil "github.com/containerd/nerdctl/pkg/imgutil/converter"
 	"github.com/containerd/nerdctl/pkg/platformutil"
-	"github.com/containerd/nerdctl/pkg/referenceutil"
 	nydusconvert "github.com/containerd/nydus-snapshotter/pkg/converter"
 	"github.com/containerd/stargz-snapshotter/estargz"
 	estargzconvert "github.com/containerd/stargz-snapshotter/nativeconverter/estargz"
@@ -54,18 +53,6 @@ func Convert(ctx context.Context, client *containerd.Client, srcRawRef, targetRa
 	if srcRawRef == "" || targetRawRef == "" {
 		return errors.New("src and target image need to be specified")
 	}
-
-	srcNamed, err := referenceutil.ParseAny(srcRawRef)
-	if err != nil {
-		return err
-	}
-	srcRef := srcNamed.String()
-
-	targetNamed, err := referenceutil.ParseDockerRef(targetRawRef)
-	if err != nil {
-		return err
-	}
-	targetRef := targetNamed.String()
 
 	platMC, err := platformutil.NewMatchComparer(options.AllPlatforms, options.Platforms)
 	if err != nil {

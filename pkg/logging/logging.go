@@ -88,9 +88,6 @@ func init() {
 	RegisterDriver("json-file", func(opts map[string]string) (Driver, error) {
 		return &JSONLogger{Opts: opts}, nil
 	}, JSONFileLogOptsValidate)
-	RegisterDriver("journald", func(opts map[string]string) (Driver, error) {
-		return &JournaldLogger{Opts: opts}, nil
-	}, JournalLogOptsValidate)
 	RegisterDriver("fluentd", func(opts map[string]string) (Driver, error) {
 		return &FluentdLogger{Opts: opts}, nil
 	}, FluentdLogOptsValidate)

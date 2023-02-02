@@ -21,10 +21,8 @@ import (
 	"fmt"
 
 	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/idutil/imagewalker"
-	"github.com/containerd/nerdctl/pkg/referenceutil"
 )
 
 func Tag(ctx context.Context, client *containerd.Client, options types.ImageTagOptions) error {
@@ -47,33 +45,11 @@ func Tag(ctx context.Context, client *containerd.Client, options types.ImageTagO
 		return fmt.Errorf("%s: not found", options.Source)
 	}
 
-	target, err := referenceutil.ParseDockerRef(options.Target)
-	if err != nil {
-		return err
-	}
-
 	ctx, done, err := client.WithLease(ctx)
 	if err != nil {
 		return err
 	}
 	defer done(ctx)
 
-	image, err := imageService.Get(ctx, srcName)
-	if err != nil {
-		return err
-	}
-	image.Name = target.String()
-	if _, err = imageService.Create(ctx, image); err != nil {
-		if errdefs.IsAlreadyExists(err) {
-			if err = imageService.Delete(ctx, image.Name); err != nil {
-				return err
-			}
-			if _, err = imageService.Create(ctx, image); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
 	return nil
 }

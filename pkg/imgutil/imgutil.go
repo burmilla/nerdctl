@@ -35,7 +35,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/idutil/imagewalker"
 	"github.com/containerd/nerdctl/pkg/imgutil/dockerconfigresolver"
 	"github.com/containerd/nerdctl/pkg/imgutil/pull"
-	"github.com/containerd/nerdctl/pkg/referenceutil"
 	"github.com/docker/docker/errdefs"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
@@ -395,21 +394,6 @@ func ParseFilters(filters []string) (*Filters, error) {
 					return nil, fmt.Errorf("invalid filter %q", filter)
 				}
 				f.Dangling = &isDangling
-			} else if tempFilterToken[0] == FilterBeforeType {
-				canonicalRef, err := referenceutil.ParseAny(tempFilterToken[1])
-				if err != nil {
-					return nil, err
-				}
-
-				f.Before = append(f.Before, fmt.Sprintf("name==%s", canonicalRef.String()))
-				f.Before = append(f.Before, fmt.Sprintf("name==%s", tempFilterToken[1]))
-			} else if tempFilterToken[0] == FilterSinceType {
-				canonicalRef, err := referenceutil.ParseAny(tempFilterToken[1])
-				if err != nil {
-					return nil, err
-				}
-				f.Since = append(f.Since, fmt.Sprintf("name==%s", canonicalRef.String()))
-				f.Since = append(f.Since, fmt.Sprintf("name==%s", tempFilterToken[1]))
 			} else if tempFilterToken[0] == FilterLabelType {
 				// To support filtering labels by keys.
 				f.Labels[tempFilterToken[1]] = ""

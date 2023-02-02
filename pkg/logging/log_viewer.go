@@ -44,7 +44,6 @@ func RegisterLogViewer(driverName string, lvfn LogViewerFunc) {
 
 func init() {
 	RegisterLogViewer("json-file", viewLogsJSONFile)
-	RegisterLogViewer("journald", viewLogsJournald)
 	RegisterLogViewer("cri", viewLogsCRI)
 }
 

@@ -26,17 +26,11 @@ import (
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/imgutil/commit"
-	"github.com/containerd/nerdctl/pkg/referenceutil"
 	"github.com/sirupsen/logrus"
 )
 
 // Commit will commit a container’s file changes or settings into a new image.
 func Commit(ctx context.Context, client *containerd.Client, rawRef string, req string, options types.ContainerCommitOptions) error {
-	named, err := referenceutil.ParseDockerRef(rawRef)
-	if err != nil {
-		return err
-	}
-
 	changes, err := parseChanges(options.Change)
 	if err != nil {
 		return err
@@ -45,7 +39,6 @@ func Commit(ctx context.Context, client *containerd.Client, rawRef string, req s
 	opts := &commit.Opts{
 		Author:  options.Author,
 		Message: options.Message,
-		Ref:     named.String(),
 		Pause:   options.Pause,
 		Changes: changes,
 	}

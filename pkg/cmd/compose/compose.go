@@ -32,7 +32,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/cosignutil"
 	"github.com/containerd/nerdctl/pkg/imgutil"
 	"github.com/containerd/nerdctl/pkg/netutil"
-	"github.com/containerd/nerdctl/pkg/referenceutil"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 )
@@ -67,21 +66,6 @@ func New(client *containerd.Client, globalOptions types.GlobalCommandOptions, op
 		} else {
 			return false, volGetErr
 		}
-	}
-
-	options.ImageExists = func(ctx context.Context, rawRef string) (bool, error) {
-		refNamed, err := referenceutil.ParseAny(rawRef)
-		if err != nil {
-			return false, err
-		}
-		ref := refNamed.String()
-		if _, err := client.ImageService().Get(ctx, ref); err != nil {
-			if errors.Is(err, errdefs.ErrNotFound) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, nil
 	}
 
 	options.EnsureImage = func(ctx context.Context, imageName, pullMode, platform string, ps *serviceparser.Service, quiet bool) error {

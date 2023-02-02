@@ -17,12 +17,9 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/containerd/nerdctl/pkg/api/types"
 	"github.com/containerd/nerdctl/pkg/clientutil"
 	"github.com/containerd/nerdctl/pkg/cmd/image"
-	"github.com/containerd/nerdctl/pkg/referenceutil"
 	"github.com/spf13/cobra"
 )
 
@@ -74,14 +71,6 @@ func processImageListOptions(cmd *cobra.Command, args []string) (types.ImageList
 	}
 	var filters []string
 
-	if len(args) > 0 {
-		canonicalRef, err := referenceutil.ParseAny(args[0])
-		if err != nil {
-			return types.ImageListOptions{}, err
-		}
-		filters = append(filters, fmt.Sprintf("name==%s", canonicalRef.String()))
-		filters = append(filters, fmt.Sprintf("name==%s", args[0]))
-	}
 	quiet, err := cmd.Flags().GetBool("quiet")
 	if err != nil {
 		return types.ImageListOptions{}, err

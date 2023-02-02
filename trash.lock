@@ -63,6 +63,8 @@ import:
   version: v1.9.0
 - package: github.com/gogo/googleapis
   version: v1.4.1
+- package: github.com/gogo/protobuf
+  version: f67b8970b736e53dbd7d0a27146c8f1ac52f74e5
 - package: github.com/golang/protobuf
   version: 5d5e8c018a13017f9d5b8bf4fad64aaa42a87308
 - package: github.com/google/uuid
@@ -73,6 +75,8 @@ import:
   version: v1.1.1
 - package: github.com/imdario/mergo
   version: 6d2237a59c57f46c2a9f99d1d57a71fb3efc0943
+- package: github.com/ipfs/go-cid
+  version: v0.3.2
 - package: github.com/klauspost/compress
   version: v1.15.11
 - package: github.com/mattn/go-isatty
@@ -85,6 +89,16 @@ import:
   version: 281af2d563954745bea9d1487c965f24d30742fe
 - package: github.com/moby/sys
   version: c161267cd2212985f81a50a029001f82c91bca7f
+- package: github.com/multiformats/go-base32
+  version: v0.1.0
+- package: github.com/multiformats/go-base36
+  version: v0.1.0
+- package: github.com/multiformats/go-multibase
+  version: v0.1.1
+- package: github.com/multiformats/go-multihash
+  version: v0.2.1
+- package: github.com/multiformats/go-varint
+  version: v0.0.6
 - package: github.com/opencontainers/go-digest
   version: v1.0.0
 - package: github.com/opencontainers/image-spec
@@ -130,6 +144,8 @@ import:
   version: v1.2.1-beta.2
 - package: github.com/vishvananda/netns
   version: v0.0.4
+- package: github.com/xeipuuv/gojsonpointer
+  version: 02993c407bfbf5f6dae44c4f4b1cf6a39b5fc5bb
 - package: github.com/xeipuuv/gojsonreference
   version: bd5ef7bd5415a7ac448318e64f11a24cd21e594b
 - package: github.com/xeipuuv/gojsonschema

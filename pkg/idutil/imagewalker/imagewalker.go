@@ -23,7 +23,6 @@ import (
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/images"
-	"github.com/containerd/nerdctl/pkg/referenceutil"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -47,9 +46,6 @@ type ImageWalker struct {
 // Returns the number of the found entries.
 func (w *ImageWalker) Walk(ctx context.Context, req string) (int, error) {
 	var filters []string
-	if canonicalRef, err := referenceutil.ParseAny(req); err == nil {
-		filters = append(filters, fmt.Sprintf("name==%s", canonicalRef.String()))
-	}
 	filters = append(filters,
 		fmt.Sprintf("name==%s", req),
 		fmt.Sprintf("target.digest~=^sha256:%s.*$", regexp.QuoteMeta(req)),
