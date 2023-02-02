@@ -7,7 +7,7 @@ import:
 - package: github.com/containerd/accelerated-container-image
   version: v0.6.0
 - package: github.com/containerd/cgroups
-  version: eac1b00c8f16fd610f643ee1f34591ad8d452b49
+  version: 1c01e9cb06bb1eeeeb19e2b55f5c0a24711663e1
   repo: https://github.com/burmilla/cgroups
 - package: github.com/containerd/console
   version: v1.0.3
@@ -35,7 +35,8 @@ import:
 - package: github.com/containernetworking/plugins
   version: v1.2.0
 - package: github.com/cpuguy83/go-md2man
-  version: v2.0.2
+  version: baaa708f7cde60417df5086177103e5d280a50d4
+  repo: https://github.com/burmilla/go-md2man
 - package: github.com/cyphar/filepath-securejoin
   version: v0.2.3
 - package: github.com/distribution/distribution
@@ -60,6 +61,8 @@ import:
   version: v1.14.1
 - package: github.com/fluent/fluent-logger-golang
   version: v1.9.0
+- package: github.com/gogo/googleapis
+  version: v1.4.1
 - package: github.com/golang/protobuf
   version: 5d5e8c018a13017f9d5b8bf4fad64aaa42a87308
 - package: github.com/google/uuid
@@ -70,7 +73,7 @@ import:
   version: v1.1.1
 - package: github.com/imdario/mergo
   version: 6d2237a59c57f46c2a9f99d1d57a71fb3efc0943
-- package: github.com/klauspost/compress/zstd
+- package: github.com/klauspost/compress
   version: v1.15.11
 - package: github.com/mattn/go-isatty
   version: v0.0.17
@@ -102,6 +105,8 @@ import:
   version: v0.3.0
 - package: github.com/rootless-containers/rootlesskit
   version: v1.1.0
+- package: github.com/russross/blackfriday
+  version: v2.1.0
 - package: github.com/sirupsen/logrus
   version: v1.9.0
 - package: github.com/spf13/cobra
@@ -117,17 +122,18 @@ import:
 - package: github.com/tinylib/msgp
   version: v1.1.6
 - package: github.com/urfave/cli
-  version: v2.24.3
+  version: f9168dd0f438101eaf78b846cebebb7bbbb99bde
+  repo: https://github.com/burmilla/cli-1
 - package: github.com/vbatts/tar-split
   version: v0.11.2
 - package: github.com/vishvananda/netlink
   version: v1.2.1-beta.2
 - package: github.com/vishvananda/netns
   version: v0.0.4
+- package: github.com/xeipuuv/gojsonreference
+  version: bd5ef7bd5415a7ac448318e64f11a24cd21e594b
 - package: github.com/xeipuuv/gojsonschema
   version: b076d39a02e5015af0a2a96636e4cc479ecd9f45
-- package: github.com/xrash/smetrics
-  version: 039620a656736e6ad994090895784a7af15e0b80
 - package: github.com/yuchanns/srslog
   version: v1.1.0
 - package: golang.org/x/net

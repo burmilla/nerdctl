@@ -29,7 +29,6 @@ import (
 
 	"github.com/containerd/cgroups/v2/stats"
 
-	"github.com/godbus/dbus/v5"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
 )
@@ -369,11 +368,6 @@ func toRdmaEntry(strEntries []string) []*stats.RdmaEntry {
 
 // isUnitExists returns true if the error is that a systemd unit already exists.
 func isUnitExists(err error) bool {
-	if err != nil {
-		if dbusError, ok := err.(dbus.Error); ok {
-			return strings.Contains(dbusError.Name, "org.freedesktop.systemd1.UnitExists")
-		}
-	}
 	return false
 }
 
