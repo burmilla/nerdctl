@@ -21,8 +21,6 @@ import:
   version: v0.14.1
 - package: github.com/containerd/stargz-snapshotter/estargz
   version: v0.14.1
-- package: github.com/containerd/stargz-snapshotter/ipfs
-  version: v0.14.1
 - package: github.com/containerd/typeurl
   version: v2.0.0
 - package: github.com/containernetworking/cni
@@ -55,6 +53,8 @@ import:
   version: v1.5.0
 - package: github.com/moby/sys
   version: c161267cd2212985f81a50a029001f82c91bca7f
+- package: github.com/multiformats/go-varint
+  version: v0.0.7
 - package: github.com/opencontainers/go-digest
   version: v1.0.0
 - package: github.com/opencontainers/image-spec
@@ -77,12 +77,20 @@ import:
   version: v1.0.5
 - package: github.com/tidwall/gjson
   version: v1.14.4
+- package: github.com/tinylib/msgp
+  version: v1.1.6
+- package: github.com/urfave/cli
+  version: v2.24.3
+- package: github.com/vbatts/tar-split
+  version: v0.11.2
 - package: github.com/vishvananda/netlink
   version: v1.2.1-beta.2
 - package: github.com/vishvananda/netns
   version: v0.0.4
 - package: github.com/yuchanns/srslog
   version: v1.1.0
+- package: go.opentelemetry.io/otel
+  version: v1.12.0
 - package: golang.org/x/net
   version: v0.5.0
 - package: golang.org/x/sync
@@ -93,6 +101,12 @@ import:
   version: v0.4.0
 - package: golang.org/x/text
   version: v0.6.0
+- package: google.golang.org/genproto
+  version: 008b39050e57570b40f1cbccc09d915634ac90a5
+- package: google.golang.org/grpc
+  version: v1.52.0
+- package: google.golang.org/protobuf
+  version: v1.28.1
 - package: gopkg.in/yaml.v2
   version: v2.4.0
 - package: gopkg.in/yaml.v3
