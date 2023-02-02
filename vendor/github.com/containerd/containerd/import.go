@@ -38,7 +38,6 @@ type importOpts struct {
 	allPlatforms    bool
 	platformMatcher platforms.MatchComparer
 	compress        bool
-	discardLayers   bool
 }
 
 // ImportOpt allows the caller to specify import specific options
@@ -102,15 +101,6 @@ func WithImportPlatform(platformMacher platforms.MatchComparer) ImportOpt {
 func WithImportCompression() ImportOpt {
 	return func(c *importOpts) error {
 		c.compress = true
-		return nil
-	}
-}
-
-// WithDiscardUnpackedLayers allows the garbage collector to clean up
-// layers from content store after unpacking.
-func WithDiscardUnpackedLayers() ImportOpt {
-	return func(c *importOpts) error {
-		c.discardLayers = true
 		return nil
 	}
 }
@@ -205,11 +195,7 @@ func (c *Client) Import(ctx context.Context, reader io.Reader, opts ...ImportOpt
 	}
 
 	handler = images.FilterPlatforms(handler, platformMatcher)
-	if iopts.discardLayers {
-		handler = images.SetChildrenMappedLabels(cs, handler, images.ChildGCLabelsFilterLayers)
-	} else {
-		handler = images.SetChildrenLabels(cs, handler)
-	}
+	handler = images.SetChildrenLabels(cs, handler)
 	if err := images.WalkNotEmpty(ctx, handler, index); err != nil {
 		return nil, err
 	}

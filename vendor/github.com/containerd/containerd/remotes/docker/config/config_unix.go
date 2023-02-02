@@ -1,4 +1,5 @@
 //go:build !windows
+// +build !windows
 
 /*
    Copyright The containerd Authors.
@@ -23,18 +24,16 @@ import (
 	"path/filepath"
 )
 
-func hostPaths(root, host string) (hosts []string) {
+func hostPaths(root, host string) []string {
 	ch := hostDirectory(host)
-	if ch != host {
-		hosts = append(hosts, filepath.Join(root, ch))
+	if ch == host {
+		return []string{filepath.Join(root, host)}
 	}
 
-	hosts = append(hosts,
+	return []string{
+		filepath.Join(root, ch),
 		filepath.Join(root, host),
-		filepath.Join(root, "_default"),
-	)
-
-	return
+	}
 }
 
 func rootSystemPool() (*x509.CertPool, error) {

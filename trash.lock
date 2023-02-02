@@ -8,7 +8,8 @@ import:
 - package: github.com/containerd/console
   version: v1.0.3
 - package: github.com/containerd/containerd
-  version: v1.7.0-beta.3
+  version: 5ea97886e3a3e79d2ca75458cc845b219e44946a
+  repo: https://github.com/burmilla/containerd
 - package: github.com/containerd/continuity
   version: v0.3.0
 - package: github.com/containerd/go-cni
@@ -89,8 +90,6 @@ import:
   version: v0.0.4
 - package: github.com/yuchanns/srslog
   version: v1.1.0
-- package: go.opentelemetry.io/otel
-  version: v1.12.0
 - package: golang.org/x/net
   version: v0.5.0
 - package: golang.org/x/sync

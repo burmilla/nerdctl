@@ -69,8 +69,8 @@ func WithTaskCheckpoint(im Image) NewTaskOpts {
 			if m.MediaType == images.MediaTypeContainerd1Checkpoint {
 				info.Checkpoint = &types.Descriptor{
 					MediaType:   m.MediaType,
-					Size:        m.Size,
-					Digest:      m.Digest.String(),
+					Size_:       m.Size,
+					Digest:      m.Digest,
 					Annotations: m.Annotations,
 				}
 				return nil

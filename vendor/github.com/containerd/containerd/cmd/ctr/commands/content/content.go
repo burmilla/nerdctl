@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sort"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -30,7 +29,6 @@ import (
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/log"
-	"github.com/containerd/containerd/remotes"
 	units "github.com/docker/go-units"
 	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -49,7 +47,6 @@ var (
 			editCommand,
 			fetchCommand,
 			fetchObjectCommand,
-			fetchBlobCommand,
 			getCommand,
 			ingestCommand,
 			listCommand,
@@ -212,7 +209,6 @@ var (
 					for k, v := range info.Labels {
 						labelStrings = append(labelStrings, strings.Join([]string{k, v}, "="))
 					}
-					sort.Strings(labelStrings)
 					labels := strings.Join(labelStrings, ",")
 					if labels == "" {
 						labels = "-"
@@ -446,60 +442,6 @@ var (
 		},
 	}
 
-	fetchBlobCommand = cli.Command{
-		Name:        "fetch-blob",
-		Usage:       "retrieve blobs from a remote",
-		ArgsUsage:   "[flags] <remote> [<digest>, ...]",
-		Description: `Fetch blobs by digests from a remote.`,
-		Flags:       commands.RegistryFlags,
-		Action: func(context *cli.Context) error {
-			var (
-				ref     = context.Args().First()
-				digests = context.Args().Tail()
-			)
-			if len(digests) == 0 {
-				return errors.New("must specify digests")
-			}
-			ctx, cancel := commands.AppContext(context)
-			defer cancel()
-
-			resolver, err := commands.GetResolver(ctx, context)
-			if err != nil {
-				return err
-			}
-
-			ctx = log.WithLogger(ctx, log.G(ctx).WithField("ref", ref))
-
-			log.G(ctx).Debugf("resolving")
-			fetcher, err := resolver.Fetcher(ctx, ref)
-			if err != nil {
-				return err
-			}
-
-			fetcherByDigest, ok := fetcher.(remotes.FetcherByDigest)
-			if !ok {
-				return fmt.Errorf("fetcher %T does not implement remotes.FetcherByDigest", fetcher)
-			}
-
-			for _, f := range digests {
-				dgst, err := digest.Parse(f)
-				if err != nil {
-					return err
-				}
-				rc, _, err := fetcherByDigest.FetchByDigest(ctx, dgst)
-				if err != nil {
-					return err
-				}
-				_, err = io.Copy(os.Stdout, rc)
-				rc.Close()
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-	}
-
 	pushObjectCommand = cli.Command{
 		Name:        "push-object",
 		Usage:       "push an object to a remote",
@@ -570,7 +512,7 @@ var (
 	}
 )
 
-func edit(context *cli.Context, rd io.Reader) (_ io.ReadCloser, retErr error) {
+func edit(context *cli.Context, rd io.Reader) (io.ReadCloser, error) {
 	editor := context.String("editor")
 	if editor == "" {
 		return nil, fmt.Errorf("editor is required")
@@ -581,14 +523,8 @@ func edit(context *cli.Context, rd io.Reader) (_ io.ReadCloser, retErr error) {
 		return nil, err
 	}
 
-	defer func() {
-		if retErr != nil {
-			os.Remove(tmp.Name())
-		}
-	}()
-	_, err = io.Copy(tmp, rd)
-	tmp.Close()
-	if err != nil {
+	if _, err := io.Copy(tmp, rd); err != nil {
+		tmp.Close()
 		return nil, err
 	}
 
@@ -600,15 +536,17 @@ func edit(context *cli.Context, rd io.Reader) (_ io.ReadCloser, retErr error) {
 	cmd.Env = os.Environ()
 
 	if err := cmd.Run(); err != nil {
+		tmp.Close()
 		return nil, err
 	}
-	// The editor might recreate new file and override the original one. We should reopen the file
-	edited, err := os.OpenFile(tmp.Name(), os.O_RDONLY, 0600)
-	if err != nil {
+
+	if _, err := tmp.Seek(0, io.SeekStart); err != nil {
+		tmp.Close()
 		return nil, err
 	}
-	return onCloser{ReadCloser: edited, onClose: func() error {
-		return os.RemoveAll(edited.Name())
+
+	return onCloser{ReadCloser: tmp, onClose: func() error {
+		return os.RemoveAll(tmp.Name())
 	}}, nil
 }
 

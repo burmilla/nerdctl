@@ -38,7 +38,6 @@ var Command = cli.Command{
 		execCommand,
 		listCommand,
 		killCommand,
-		metricsCommand,
 		pauseCommand,
 		psCommand,
 		resumeCommand,

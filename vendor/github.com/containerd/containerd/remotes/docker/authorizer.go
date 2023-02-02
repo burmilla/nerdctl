@@ -45,6 +45,13 @@ type dockerAuthorizer struct {
 	onFetchRefreshToken OnFetchRefreshToken
 }
 
+// NewAuthorizer creates a Docker authorizer using the provided function to
+// get credentials for the token server or basic auth.
+// Deprecated: Use NewDockerAuthorizer
+func NewAuthorizer(client *http.Client, f func(string) (string, string, error)) Authorizer {
+	return NewDockerAuthorizer(WithAuthClient(client), WithAuthCreds(f))
+}
+
 type authorizerConfig struct {
 	credentials         func(string) (string, string, error)
 	client              *http.Client

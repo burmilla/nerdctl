@@ -43,16 +43,10 @@ var bufPool = sync.Pool{
 	},
 }
 
-type reader interface {
-	Reader() io.Reader
-}
-
 // NewReader returns a io.Reader from a ReaderAt
 func NewReader(ra ReaderAt) io.Reader {
-	if rd, ok := ra.(reader); ok {
-		return rd.Reader()
-	}
-	return io.NewSectionReader(ra, 0, ra.Size())
+	rd := io.NewSectionReader(ra, 0, ra.Size())
+	return rd
 }
 
 // ReadBlob retrieves the entire contents of the blob from the provider.

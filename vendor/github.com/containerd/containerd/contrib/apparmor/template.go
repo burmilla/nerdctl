@@ -1,4 +1,5 @@
 //go:build linux
+// +build linux
 
 /*
    Copyright The docker Authors.
@@ -83,9 +84,7 @@ profile {{.Name}} flags=(attach_disconnected,mediate_deleted) {
   deny /sys/kernel/security/** rwklx,
 
 {{if ge .Version 208095}}
-  # allow processes within the container to trace each other,
-  # provided all other LSM and yama setting allow it.
-  ptrace (trace,tracedby,read,readby) peer={{.Name}},
+  ptrace (trace,read) peer={{.Name}},
 {{end}}
 }
 `
@@ -101,7 +100,9 @@ type data struct {
 func cleanProfileName(profile string) string {
 	// Normally profiles are suffixed by " (enforce)". AppArmor profiles cannot
 	// contain spaces so this doesn't restrict daemon profile names.
-	profile, _, _ = strings.Cut(profile, " ")
+	if parts := strings.SplitN(profile, " ", 2); len(parts) >= 1 {
+		profile = parts[0]
+	}
 	if profile == "" {
 		profile = "unconfined"
 	}
@@ -183,18 +184,17 @@ func parseVersion(output string) (int, error) {
 	// Copyright (C) 1999-2008 Novell Inc.
 	// Copyright 2009-2012 Canonical Ltd.
 
-	version, _, _ := strings.Cut(output, "\n")
-	if i := strings.LastIndex(version, " "); i >= 0 {
-		version = version[i+1:]
-	}
+	lines := strings.SplitN(output, "\n", 2)
+	words := strings.Split(lines[0], " ")
+	version := words[len(words)-1]
 
 	// trim "-beta1" suffix from version="3.0.0-beta1" if exists
-	version, _, _ = strings.Cut(version, "-")
+	version = strings.SplitN(version, "-", 2)[0]
 	// also trim tilde
-	version, _, _ = strings.Cut(version, "~")
+	version = strings.SplitN(version, "~", 2)[0]
 
 	// split by major minor version
-	v := strings.SplitN(version, ".", 4)
+	v := strings.Split(version, ".")
 	if len(v) == 0 || len(v) > 3 {
 		return -1, fmt.Errorf("parsing version failed for output: `%s`", output)
 	}
