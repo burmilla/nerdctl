@@ -65,10 +65,6 @@ func shellCompleteCgroupManagerNames(cmd *cobra.Command, args []string, toComple
 	return candidates, cobra.ShellCompDirectiveNoFileComp
 }
 
-func addApparmorCommand(rootCmd *cobra.Command) {
-	rootCmd.AddCommand(newApparmorCommand())
-}
-
 func addCpCommand(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(newCpCommand())
 }

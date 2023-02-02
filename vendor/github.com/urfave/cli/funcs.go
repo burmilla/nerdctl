@@ -1,6 +1,6 @@
 package cli
 
-// BashCompleteFunc is an action to execute when the shell completion flag is set
+// BashCompleteFunc is an action to execute when the bash-completion flag is set
 type BashCompleteFunc func(*Context)
 
 // BeforeFunc is an action to execute before any subcommands are run, but after
@@ -17,13 +17,13 @@ type ActionFunc func(*Context) error
 // CommandNotFoundFunc is executed if the proper command cannot be found
 type CommandNotFoundFunc func(*Context, string)
 
-// OnUsageErrorFunc is executed if a usage error occurs. This is useful for displaying
+// OnUsageErrorFunc is executed if an usage error occurs. This is useful for displaying
 // customized usage error messages.  This function is able to replace the
 // original error messages.  If this function is not set, the "Incorrect usage"
 // is displayed and the execution is interrupted.
 type OnUsageErrorFunc func(context *Context, err error, isSubcommand bool) error
 
-// ExitErrHandlerFunc is executed if provided in order to handle exitError values
+// ExitErrHandlerFunc is executed if provided in order to handle ExitError values
 // returned by Actions and Before/After functions.
 type ExitErrHandlerFunc func(context *Context, err error)
 
@@ -33,11 +33,11 @@ type FlagStringFunc func(Flag) string
 
 // FlagNamePrefixFunc is used by the default FlagStringFunc to create prefix
 // text for a flag's full name.
-type FlagNamePrefixFunc func(fullName []string, placeholder string) string
+type FlagNamePrefixFunc func(fullName, placeholder string) string
 
 // FlagEnvHintFunc is used by the default FlagStringFunc to annotate flag help
 // with the environment variable details.
-type FlagEnvHintFunc func(envVars []string, str string) string
+type FlagEnvHintFunc func(envVar, str string) string
 
 // FlagFileHintFunc is used by the default FlagStringFunc to annotate flag help
 // with the file path details.

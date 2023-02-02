@@ -1,5 +1,4 @@
 //go:build !windows
-// +build !windows
 
 /*
    Copyright The containerd Authors.
@@ -34,11 +33,11 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func init() {
-	startCommand.Flags = append(startCommand.Flags, cli.BoolFlag{
+var platformStartFlags = []cli.Flag{
+	cli.BoolFlag{
 		Name:  "no-pivot",
 		Usage: "disable use of pivot-root (linux only)",
-	})
+	},
 }
 
 // HandleConsoleResize resizes the console

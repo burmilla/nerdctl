@@ -23,18 +23,12 @@ import (
 	"os"
 	"text/tabwriter"
 
-	v1 "github.com/containerd/cgroups/stats/v1"
-	v2 "github.com/containerd/cgroups/v2/stats"
+	v1 "github.com/containerd/cgroups/cgroup1/stats"
+	v2 "github.com/containerd/cgroups/cgroup2/stats"
 	"github.com/containerd/containerd/cmd/ctr/commands"
 	"github.com/containerd/typeurl"
 	"github.com/urfave/cli"
 )
-
-func init() {
-	// metricsCommand is only added on Linux as github.com/containerd/cgroups
-	// does not compile on darwin or windows
-	Command.Subcommands = append(Command.Subcommands, metricsCommand)
-}
 
 const (
 	formatFlag  = "format"

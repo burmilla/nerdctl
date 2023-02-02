@@ -1,57 +1,41 @@
 package cli
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"reflect"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 )
 
 const defaultPlaceholder = "value"
 
-var (
-	slPfx = fmt.Sprintf("sl:::%d:::", time.Now().UTC().UnixNano())
-
-	commaWhitespace = regexp.MustCompile("[, ]+.*")
-)
-
 // BashCompletionFlag enables bash-completion for all commands and subcommands
-var BashCompletionFlag Flag = &BoolFlag{
+var BashCompletionFlag Flag = BoolFlag{
 	Name:   "generate-bash-completion",
 	Hidden: true,
 }
 
 // VersionFlag prints the version for the application
-var VersionFlag Flag = &BoolFlag{
-	Name:    "version",
-	Aliases: []string{"v"},
-	Usage:   "print the version",
+var VersionFlag Flag = BoolFlag{
+	Name:  "version, v",
+	Usage: "print the version",
 }
 
-// HelpFlag prints the help for all commands and subcommands.
-// Set to nil to disable the flag.  The subcommand
-// will still be added unless HideHelp or HideHelpCommand is set to true.
-var HelpFlag Flag = &BoolFlag{
-	Name:    "help",
-	Aliases: []string{"h"},
-	Usage:   "show help",
+// HelpFlag prints the help for all commands and subcommands
+// Set to the zero value (BoolFlag{}) to disable flag -- keeps subcommand
+// unless HideHelp is set to true)
+var HelpFlag Flag = BoolFlag{
+	Name:  "help, h",
+	Usage: "show help",
 }
 
 // FlagStringer converts a flag definition to a string. This is used by help
 // to display a flag.
 var FlagStringer FlagStringFunc = stringifyFlag
-
-// Serializer is used to circumvent the limitations of flag.FlagSet.Set
-type Serializer interface {
-	Serialize() string
-}
 
 // FlagNamePrefixer converts a full flag name and its placeholder into the help
 // message flag prefix. This is used by the default FlagStringer.
@@ -73,12 +57,7 @@ func (f FlagsByName) Len() int {
 }
 
 func (f FlagsByName) Less(i, j int) bool {
-	if len(f[j].Names()) == 0 {
-		return false
-	} else if len(f[i].Names()) == 0 {
-		return true
-	}
-	return lexicographicLess(f[i].Names()[0], f[j].Names()[0])
+	return lexicographicLess(f[i].GetName(), f[j].GetName())
 }
 
 func (f FlagsByName) Swap(i, j int) {
@@ -91,9 +70,8 @@ func (f FlagsByName) Swap(i, j int) {
 type Flag interface {
 	fmt.Stringer
 	// Apply Flag settings to the given flag set
-	Apply(*flag.FlagSet) error
-	Names() []string
-	IsSet() bool
+	Apply(*flag.FlagSet)
+	GetName() string
 }
 
 // RequiredFlag is an interface that allows us to mark flags as required
@@ -119,72 +97,45 @@ type DocGenerationFlag interface {
 	GetValue() string
 }
 
-// VisibleFlag is an interface that allows to check if a flag is visible
-type VisibleFlag interface {
+// errorableFlag is an interface that allows us to return errors during apply
+// it allows flags defined in this library to return errors in a fashion backwards compatible
+// TODO remove in v2 and modify the existing Flag interface to return errors
+type errorableFlag interface {
 	Flag
 
-	// IsVisible returns true if the flag is not hidden, otherwise false
-	IsVisible() bool
+	ApplyWithError(*flag.FlagSet) error
 }
 
 func flagSet(name string, flags []Flag) (*flag.FlagSet, error) {
 	set := flag.NewFlagSet(name, flag.ContinueOnError)
 
 	for _, f := range flags {
-		if err := f.Apply(set); err != nil {
-			return nil, err
+		//TODO remove in v2 when errorableFlag is removed
+		if ef, ok := f.(errorableFlag); ok {
+			if err := ef.ApplyWithError(set); err != nil {
+				return nil, err
+			}
+		} else {
+			f.Apply(set)
 		}
 	}
 	set.SetOutput(ioutil.Discard)
 	return set, nil
 }
 
-func copyFlag(name string, ff *flag.Flag, set *flag.FlagSet) {
-	switch ff.Value.(type) {
-	case Serializer:
-		_ = set.Set(name, ff.Value.(Serializer).Serialize())
-	default:
-		_ = set.Set(name, ff.Value.String())
+func eachName(longName string, fn func(string)) {
+	parts := strings.Split(longName, ",")
+	for _, name := range parts {
+		name = strings.Trim(name, " ")
+		fn(name)
 	}
-}
-
-func normalizeFlags(flags []Flag, set *flag.FlagSet) error {
-	visited := make(map[string]bool)
-	set.Visit(func(f *flag.Flag) {
-		visited[f.Name] = true
-	})
-	for _, f := range flags {
-		parts := f.Names()
-		if len(parts) == 1 {
-			continue
-		}
-		var ff *flag.Flag
-		for _, name := range parts {
-			name = strings.Trim(name, " ")
-			if visited[name] {
-				if ff != nil {
-					return errors.New("Cannot use two forms of the same flag: " + name + " " + ff.Name)
-				}
-				ff = set.Lookup(name)
-			}
-		}
-		if ff == nil {
-			continue
-		}
-		for _, name := range parts {
-			name = strings.Trim(name, " ")
-			if !visited[name] {
-				copyFlag(name, ff, set)
-			}
-		}
-	}
-	return nil
 }
 
 func visibleFlags(fl []Flag) []Flag {
 	var visible []Flag
 	for _, f := range fl {
-		if vf, ok := f.(VisibleFlag); ok && vf.IsVisible() {
+		field := flagValue(f).FieldByName("Hidden")
+		if !field.IsValid() || !field.Bool() {
 			visible = append(visible, f)
 		}
 	}
@@ -218,27 +169,25 @@ func unquoteUsage(usage string) (string, string) {
 	return "", usage
 }
 
-func prefixedNames(names []string, placeholder string) string {
+func prefixedNames(fullName, placeholder string) string {
 	var prefixed string
-	for i, name := range names {
-		if name == "" {
-			continue
-		}
-
+	parts := strings.Split(fullName, ",")
+	for i, name := range parts {
+		name = strings.Trim(name, " ")
 		prefixed += prefixFor(name) + name
 		if placeholder != "" {
 			prefixed += " " + placeholder
 		}
-		if i < len(names)-1 {
+		if i < len(parts)-1 {
 			prefixed += ", "
 		}
 	}
 	return prefixed
 }
 
-func withEnvHint(envVars []string, str string) string {
+func withEnvHint(envVar, str string) string {
 	envText := ""
-	if envVars != nil && len(envVars) > 0 {
+	if envVar != "" {
 		prefix := "$"
 		suffix := ""
 		sep := ", $"
@@ -247,35 +196,9 @@ func withEnvHint(envVars []string, str string) string {
 			suffix = "%"
 			sep = "%, %"
 		}
-
-		envText = fmt.Sprintf(" [%s%s%s]", prefix, strings.Join(envVars, sep), suffix)
+		envText = " [" + prefix + strings.Join(strings.Split(envVar, ","), sep) + suffix + "]"
 	}
 	return str + envText
-}
-
-func flagNames(name string, aliases []string) []string {
-	var ret []string
-
-	for _, part := range append([]string{name}, aliases...) {
-		// v1 -> v2 migration warning zone:
-		// Strip off anything after the first found comma or space, which
-		// *hopefully* makes it a tiny bit more obvious that unexpected behavior is
-		// caused by using the v1 form of stringly typed "Name".
-		ret = append(ret, commaWhitespace.ReplaceAllString(part, ""))
-	}
-
-	return ret
-}
-
-func flagStringSliceField(f Flag, name string) []string {
-	fv := flagValue(f)
-	field := fv.FieldByName(name)
-
-	if field.IsValid() {
-		return field.Interface().([]string)
-	}
-
-	return []string{}
 }
 
 func withFileHint(filePath, str string) string {
@@ -294,49 +217,51 @@ func flagValue(f Flag) reflect.Value {
 	return fv
 }
 
-func formatDefault(format string) string {
-	return " (default: " + format + ")"
-}
-
 func stringifyFlag(f Flag) string {
 	fv := flagValue(f)
 
-	switch f := f.(type) {
-	case *IntSliceFlag:
-		return withEnvHint(flagStringSliceField(f, "EnvVars"),
-			stringifyIntSliceFlag(f))
-	case *Int64SliceFlag:
-		return withEnvHint(flagStringSliceField(f, "EnvVars"),
-			stringifyInt64SliceFlag(f))
-	case *Float64SliceFlag:
-		return withEnvHint(flagStringSliceField(f, "EnvVars"),
-			stringifyFloat64SliceFlag(f))
-	case *StringSliceFlag:
-		return withEnvHint(flagStringSliceField(f, "EnvVars"),
-			stringifyStringSliceFlag(f))
+	switch f.(type) {
+	case IntSliceFlag:
+		return FlagFileHinter(
+			fv.FieldByName("FilePath").String(),
+			FlagEnvHinter(
+				fv.FieldByName("EnvVar").String(),
+				stringifyIntSliceFlag(f.(IntSliceFlag)),
+			),
+		)
+	case Int64SliceFlag:
+		return FlagFileHinter(
+			fv.FieldByName("FilePath").String(),
+			FlagEnvHinter(
+				fv.FieldByName("EnvVar").String(),
+				stringifyInt64SliceFlag(f.(Int64SliceFlag)),
+			),
+		)
+	case StringSliceFlag:
+		return FlagFileHinter(
+			fv.FieldByName("FilePath").String(),
+			FlagEnvHinter(
+				fv.FieldByName("EnvVar").String(),
+				stringifyStringSliceFlag(f.(StringSliceFlag)),
+			),
+		)
 	}
 
 	placeholder, usage := unquoteUsage(fv.FieldByName("Usage").String())
 
 	needsPlaceholder := false
 	defaultValueString := ""
-	val := fv.FieldByName("Value")
-	if val.IsValid() {
-		needsPlaceholder = val.Kind() != reflect.Bool
-		defaultValueString = fmt.Sprintf(formatDefault("%v"), val.Interface())
+
+	if val := fv.FieldByName("Value"); val.IsValid() {
+		needsPlaceholder = true
+		defaultValueString = fmt.Sprintf(" (default: %v)", val.Interface())
 
 		if val.Kind() == reflect.String && val.String() != "" {
-			defaultValueString = fmt.Sprintf(formatDefault("%q"), val.String())
+			defaultValueString = fmt.Sprintf(" (default: %q)", val.String())
 		}
 	}
 
-	helpText := fv.FieldByName("DefaultText")
-	if helpText.IsValid() && helpText.String() != "" {
-		needsPlaceholder = val.Kind() != reflect.Bool
-		defaultValueString = fmt.Sprintf(formatDefault("%s"), helpText.String())
-	}
-
-	if defaultValueString == formatDefault("") {
+	if defaultValueString == " (default: )" {
 		defaultValueString = ""
 	}
 
@@ -346,11 +271,16 @@ func stringifyFlag(f Flag) string {
 
 	usageWithDefault := strings.TrimSpace(usage + defaultValueString)
 
-	return withEnvHint(flagStringSliceField(f, "EnvVars"),
-		fmt.Sprintf("%s\t%s", prefixedNames(f.Names(), placeholder), usageWithDefault))
+	return FlagFileHinter(
+		fv.FieldByName("FilePath").String(),
+		FlagEnvHinter(
+			fv.FieldByName("EnvVar").String(),
+			FlagNamePrefixer(fv.FieldByName("Name").String(), placeholder)+"\t"+usageWithDefault,
+		),
+	)
 }
 
-func stringifyIntSliceFlag(f *IntSliceFlag) string {
+func stringifyIntSliceFlag(f IntSliceFlag) string {
 	var defaultVals []string
 	if f.Value != nil && len(f.Value.Value()) > 0 {
 		for _, i := range f.Value.Value() {
@@ -358,10 +288,10 @@ func stringifyIntSliceFlag(f *IntSliceFlag) string {
 		}
 	}
 
-	return stringifySliceFlag(f.Usage, f.Names(), defaultVals)
+	return stringifySliceFlag(f.Usage, f.Name, defaultVals)
 }
 
-func stringifyInt64SliceFlag(f *Int64SliceFlag) string {
+func stringifyInt64SliceFlag(f Int64SliceFlag) string {
 	var defaultVals []string
 	if f.Value != nil && len(f.Value.Value()) > 0 {
 		for _, i := range f.Value.Value() {
@@ -369,22 +299,10 @@ func stringifyInt64SliceFlag(f *Int64SliceFlag) string {
 		}
 	}
 
-	return stringifySliceFlag(f.Usage, f.Names(), defaultVals)
+	return stringifySliceFlag(f.Usage, f.Name, defaultVals)
 }
 
-func stringifyFloat64SliceFlag(f *Float64SliceFlag) string {
-	var defaultVals []string
-
-	if f.Value != nil && len(f.Value.Value()) > 0 {
-		for _, i := range f.Value.Value() {
-			defaultVals = append(defaultVals, strings.TrimRight(strings.TrimRight(fmt.Sprintf("%f", i), "0"), "."))
-		}
-	}
-
-	return stringifySliceFlag(f.Usage, f.Names(), defaultVals)
-}
-
-func stringifyStringSliceFlag(f *StringSliceFlag) string {
+func stringifyStringSliceFlag(f StringSliceFlag) string {
 	var defaultVals []string
 	if f.Value != nil && len(f.Value.Value()) > 0 {
 		for _, s := range f.Value.Value() {
@@ -394,10 +312,10 @@ func stringifyStringSliceFlag(f *StringSliceFlag) string {
 		}
 	}
 
-	return stringifySliceFlag(f.Usage, f.Names(), defaultVals)
+	return stringifySliceFlag(f.Usage, f.Name, defaultVals)
 }
 
-func stringifySliceFlag(usage string, names, defaultVals []string) string {
+func stringifySliceFlag(usage, name string, defaultVals []string) string {
 	placeholder, usage := unquoteUsage(usage)
 	if placeholder == "" {
 		placeholder = defaultPlaceholder
@@ -405,32 +323,18 @@ func stringifySliceFlag(usage string, names, defaultVals []string) string {
 
 	defaultVal := ""
 	if len(defaultVals) > 0 {
-		defaultVal = fmt.Sprintf(formatDefault("%s"), strings.Join(defaultVals, ", "))
+		defaultVal = fmt.Sprintf(" (default: %s)", strings.Join(defaultVals, ", "))
 	}
 
-	usageWithDefault := strings.TrimSpace(fmt.Sprintf("%s%s", usage, defaultVal))
-	multiInputString := "(accepts multiple inputs)"
-	if usageWithDefault != "" {
-		multiInputString = "\t" + multiInputString
-	}
-	return fmt.Sprintf("%s\t%s%s", prefixedNames(names, placeholder), usageWithDefault, multiInputString)
+	usageWithDefault := strings.TrimSpace(usage + defaultVal)
+	return FlagNamePrefixer(name, placeholder) + "\t" + usageWithDefault
 }
 
-func hasFlag(flags []Flag, fl Flag) bool {
-	for _, existing := range flags {
-		if fl == existing {
-			return true
-		}
-	}
-
-	return false
-}
-
-func flagFromEnvOrFile(envVars []string, filePath string) (val string, ok bool) {
-	for _, envVar := range envVars {
+func flagFromFileEnv(filePath, envName string) (val string, ok bool) {
+	for _, envVar := range strings.Split(envName, ",") {
 		envVar = strings.TrimSpace(envVar)
-		if val, ok := syscall.Getenv(envVar); ok {
-			return val, true
+		if envVal, ok := syscall.Getenv(envVar); ok {
+			return envVal, true
 		}
 	}
 	for _, fileVar := range strings.Split(filePath, ",") {

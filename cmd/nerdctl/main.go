@@ -272,8 +272,6 @@ Config file ($NERDCTL_TOML): %s
 		// #endregion
 
 		// #region System
-		newEventsCommand(),
-		newInfoCommand(),
 		newVersionCommand(),
 		// #endregion
 
@@ -282,7 +280,6 @@ Config file ($NERDCTL_TOML): %s
 
 		// stats
 		newTopCommand(),
-		newStatsCommand(),
 
 		// #region Management
 		newContainerCommand(),
@@ -306,7 +303,6 @@ Config file ($NERDCTL_TOML): %s
 		// Compose
 		newComposeCommand(),
 	)
-	addApparmorCommand(rootCmd)
 	addCpCommand(rootCmd)
 
 	// add aliasToBeInherited to subCommand(s) InheritedFlags

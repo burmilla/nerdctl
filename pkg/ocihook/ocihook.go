@@ -363,8 +363,6 @@ func getMACAddressOpts(opts *handlerOpts) ([]gocni.NamespaceOpts, error) {
 }
 
 func onCreateRuntime(opts *handlerOpts) error {
-	loadAppArmor()
-
 	if opts.cni != nil {
 		portMapOpts, err := getPortMapOpts(opts)
 		if err != nil {

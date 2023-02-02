@@ -26,7 +26,6 @@ import (
 )
 
 func Tag(ctx context.Context, client *containerd.Client, options types.ImageTagOptions) error {
-	imageService := client.ImageService()
 	var srcName string
 	imagewalker := &imagewalker.ImageWalker{
 		Client: client,

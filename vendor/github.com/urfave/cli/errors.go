@@ -15,61 +15,25 @@ var OsExiter = os.Exit
 var ErrWriter io.Writer = os.Stderr
 
 // MultiError is an error that wraps multiple errors.
-type MultiError interface {
-	error
-	Errors() []error
+type MultiError struct {
+	Errors []error
 }
 
-// newMultiError creates a new MultiError. Pass in one or more errors.
-func newMultiError(err ...error) MultiError {
-	ret := multiError(err)
-	return &ret
+// NewMultiError creates a new MultiError. Pass in one or more errors.
+func NewMultiError(err ...error) MultiError {
+	return MultiError{Errors: err}
 }
-
-type multiError []error
 
 // Error implements the error interface.
-func (m *multiError) Error() string {
-	errs := make([]string, len(*m))
-	for i, err := range *m {
+func (m MultiError) Error() string {
+	errs := make([]string, len(m.Errors))
+	for i, err := range m.Errors {
 		errs[i] = err.Error()
 	}
 
 	return strings.Join(errs, "\n")
 }
 
-// Errors returns a copy of the errors slice
-func (m *multiError) Errors() []error {
-	errs := make([]error, len(*m))
-	for _, err := range *m {
-		errs = append(errs, err)
-	}
-	return errs
-}
-
-type requiredFlagsErr interface {
-	error
-	getMissingFlags() []string
-}
-
-type errRequiredFlags struct {
-	missingFlags []string
-}
-
-func (e *errRequiredFlags) Error() string {
-	numberOfMissingFlags := len(e.missingFlags)
-	if numberOfMissingFlags == 1 {
-		return fmt.Sprintf("Required flag %q not set", e.missingFlags[0])
-	}
-	joinedMissingFlags := strings.Join(e.missingFlags, ", ")
-	return fmt.Sprintf("Required flags %q not set", joinedMissingFlags)
-}
-
-func (e *errRequiredFlags) getMissingFlags() []string {
-	return e.missingFlags
-}
-
-// ErrorFormatter is the interface that will suitably format the error output
 type ErrorFormatter interface {
 	Format(s fmt.State, verb rune)
 }
@@ -81,48 +45,36 @@ type ExitCoder interface {
 	ExitCode() int
 }
 
-type exitError struct {
+// ExitError fulfills both the builtin `error` interface and `ExitCoder`
+type ExitError struct {
 	exitCode int
 	message  interface{}
 }
 
-// NewExitError calls Exit to create a new ExitCoder.
-//
-// Deprecated: This function is a duplicate of Exit and will eventually be removed.
-func NewExitError(message interface{}, exitCode int) ExitCoder {
-	return Exit(message, exitCode)
-}
-
-// Exit wraps a message and exit code into an error, which by default is
-// handled with a call to os.Exit during default error handling.
-//
-// This is the simplest way to trigger a non-zero exit code for an App without
-// having to call os.Exit manually. During testing, this behavior can be avoided
-// by overiding the ExitErrHandler function on an App or the package-global
-// OsExiter function.
-func Exit(message interface{}, exitCode int) ExitCoder {
-	return &exitError{
-		message:  message,
+// NewExitError makes a new *ExitError
+func NewExitError(message interface{}, exitCode int) *ExitError {
+	return &ExitError{
 		exitCode: exitCode,
+		message:  message,
 	}
 }
 
-func (ee *exitError) Error() string {
+// Error returns the string message, fulfilling the interface required by
+// `error`
+func (ee *ExitError) Error() string {
 	return fmt.Sprintf("%v", ee.message)
 }
 
-func (ee *exitError) ExitCode() int {
+// ExitCode returns the exit code, fulfilling the interface required by
+// `ExitCoder`
+func (ee *ExitError) ExitCode() int {
 	return ee.exitCode
 }
 
-// HandleExitCoder handles errors implementing ExitCoder by printing their
-// message and calling OsExiter with the given exit code.
-//
-// If the given error instead implements MultiError, each error will be checked
-// for the ExitCoder interface, and OsExiter will be called with the last exit
-// code found, or exit code 1 if no ExitCoder is found.
-//
-// This function is the default error-handling behavior for an App.
+// HandleExitCoder checks if the error fulfills the ExitCoder interface, and if
+// so prints the error to stderr (if it is non-empty) and calls OsExiter with the
+// given exit code.  If the given error is a MultiError, then this func is
+// called on all members of the Errors slice and calls OsExiter with the last exit code.
 func HandleExitCoder(err error) {
 	if err == nil {
 		return
@@ -131,9 +83,9 @@ func HandleExitCoder(err error) {
 	if exitErr, ok := err.(ExitCoder); ok {
 		if err.Error() != "" {
 			if _, ok := exitErr.(ErrorFormatter); ok {
-				_, _ = fmt.Fprintf(ErrWriter, "%+v\n", err)
+				fmt.Fprintf(ErrWriter, "%+v\n", err)
 			} else {
-				_, _ = fmt.Fprintln(ErrWriter, err)
+				fmt.Fprintln(ErrWriter, err)
 			}
 		}
 		OsExiter(exitErr.ExitCode())
@@ -149,10 +101,10 @@ func HandleExitCoder(err error) {
 
 func handleMultiError(multiErr MultiError) int {
 	code := 1
-	for _, merr := range multiErr.Errors() {
+	for _, merr := range multiErr.Errors {
 		if multiErr2, ok := merr.(MultiError); ok {
 			code = handleMultiError(multiErr2)
-		} else if merr != nil {
+		} else {
 			fmt.Fprintln(ErrWriter, merr)
 			if exitErr, ok := merr.(ExitCoder); ok {
 				code = exitErr.ExitCode()

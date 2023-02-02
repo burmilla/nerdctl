@@ -4,15 +4,13 @@ import:
 - package: github.com/compose-spec/compose-go
   version: dcb4478d7dca13632d2285a90865659d28835ef5
   repo: https://github.com/burmilla/compose-go
-- package: github.com/containerd/accelerated-container-image
-  version: v0.6.0
 - package: github.com/containerd/cgroups
-  version: 1c01e9cb06bb1eeeeb19e2b55f5c0a24711663e1
+  version: 84d80b9da39c99d911eba46deb28d18d55c98fea
   repo: https://github.com/burmilla/cgroups
 - package: github.com/containerd/console
   version: v1.0.3
 - package: github.com/containerd/containerd
-  version: 5ea97886e3a3e79d2ca75458cc845b219e44946a
+  version: 8552da07cbe97ae25f05ef44392bc875d1611505
   repo: https://github.com/burmilla/containerd
 - package: github.com/containerd/continuity
   version: v0.3.0
@@ -61,12 +59,16 @@ import:
   version: v1.14.1
 - package: github.com/fluent/fluent-logger-golang
   version: v1.9.0
-- package: github.com/gogo/googleapis
-  version: v1.4.1
+- package: github.com/go-logr/logr
+  version: v1.2.3
+- package: github.com/go-logr/stdr
+  version: v1.2.2
 - package: github.com/gogo/protobuf
   version: f67b8970b736e53dbd7d0a27146c8f1ac52f74e5
 - package: github.com/golang/protobuf
   version: 5d5e8c018a13017f9d5b8bf4fad64aaa42a87308
+- package: github.com/google/go-cmp
+  version: v0.5.9
 - package: github.com/google/uuid
   version: 44b5fee7c49cf3bcdf723f106b36d56ef13ccc88
 - package: github.com/hashicorp/errwrap
@@ -75,8 +77,6 @@ import:
   version: v1.1.1
 - package: github.com/imdario/mergo
   version: 6d2237a59c57f46c2a9f99d1d57a71fb3efc0943
-- package: github.com/ipfs/go-cid
-  version: v0.3.2
 - package: github.com/klauspost/compress
   version: v1.15.11
 - package: github.com/mattn/go-isatty
@@ -89,16 +89,6 @@ import:
   version: 281af2d563954745bea9d1487c965f24d30742fe
 - package: github.com/moby/sys
   version: c161267cd2212985f81a50a029001f82c91bca7f
-- package: github.com/multiformats/go-base32
-  version: v0.1.0
-- package: github.com/multiformats/go-base36
-  version: v0.1.0
-- package: github.com/multiformats/go-multibase
-  version: v0.1.1
-- package: github.com/multiformats/go-multihash
-  version: v0.2.1
-- package: github.com/multiformats/go-varint
-  version: v0.0.6
 - package: github.com/opencontainers/go-digest
   version: v1.0.0
 - package: github.com/opencontainers/image-spec
@@ -136,7 +126,7 @@ import:
 - package: github.com/tinylib/msgp
   version: v1.1.6
 - package: github.com/urfave/cli
-  version: f9168dd0f438101eaf78b846cebebb7bbbb99bde
+  version: 8265a93470780e6c729730f1531da7115aad77c1
   repo: https://github.com/burmilla/cli-1
 - package: github.com/vbatts/tar-split
   version: v0.11.2
@@ -152,6 +142,8 @@ import:
   version: b076d39a02e5015af0a2a96636e4cc479ecd9f45
 - package: github.com/yuchanns/srslog
   version: v1.1.0
+- package: go.opentelemetry.io/otel
+  version: v1.12.0
 - package: golang.org/x/net
   version: v0.5.0
 - package: golang.org/x/sync
@@ -168,6 +160,10 @@ import:
   version: v1.52.0
 - package: google.golang.org/protobuf
   version: v1.28.1
+- package: google.golang.org/protobuf/reflect
+  version: v1.27.1
+- package: google.golang.org/protobuf/runtime
+  version: v1.27.1
 - package: gopkg.in/yaml.v2
   version: v2.4.0
 - package: gopkg.in/yaml.v3
